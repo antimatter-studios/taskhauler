@@ -6,9 +6,9 @@ build/
 *.log
 
 # Go
-backend/taskhauler-backend
-backend/tmp/
-backend/.air-tmp/
+backend*/taskhauler-backend
+backend*/tmp/
+backend*/.air-tmp/
 *.test
 *.out
 
