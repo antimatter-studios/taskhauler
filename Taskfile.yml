@@ -174,7 +174,7 @@ tasks:
           -e JWT_SECRET={{.JWT_SECRET}} \
           -e ADMIN_EMAIL={{.ADMIN_EMAIL}} \
           -e ADMIN_PASSWORD={{.ADMIN_PASSWORD}} \
-          -e CORS_ALLOWED_ORIGINS=http://{{.DOMAIN}},http://localhost:3000 \
+          -e CORS_ALLOWED_ORIGINS=http://{{.DOMAIN}},http://{{.DOMAIN_V2}},http://localhost:3000 \
           {{.BACKEND_V1_IMAGE}}:dev
       - task: net:attach-proxy
 
@@ -196,7 +196,7 @@ tasks:
           -e JWT_SECRET={{.JWT_SECRET}} \
           -e ADMIN_EMAIL={{.ADMIN_EMAIL}} \
           -e ADMIN_PASSWORD={{.ADMIN_PASSWORD}} \
-          -e CORS_ALLOWED_ORIGINS=http://{{.DOMAIN}} \
+          -e CORS_ALLOWED_ORIGINS=http://{{.DOMAIN}},http://{{.DOMAIN_V2}} \
           {{.BACKEND_V1_IMAGE}}:latest
       - task: net:attach-proxy
 
@@ -294,7 +294,7 @@ tasks:
           -l com.docker.compose.service=frontend-v2 \
           -l docker-proxy.taskhauler-app-v2.host={{.DOMAIN_V2}} \
           -l docker-proxy.taskhauler-app-v2.port=3000 \
-          -e VITE_BACKEND_V1_URL=http://{{.BACKEND_V1_CONTAINER}}:8080 \
+          -e VITE_API_BASE_URL=http://{{.DOMAIN}}/api/v1 \
           {{.PROJECT}}-frontend-v2:dev
       - task: net:attach-proxy
 

@@ -19,7 +19,13 @@ import type {
 
 const TOKEN_KEY = "taskhauler_token";
 const REFRESH_KEY = "taskhauler_refresh_token";
-const API_BASE = "/api/v1";
+// Full URL of the v1 API. v2 is served from a different origin than the API
+// (taskhauler-v2.localhost vs. taskhauler.localhost/api/v1), so this must be
+// an absolute URL — same-origin fetches would only work via the vite dev
+// proxy and would break under prod nginx.
+const API_BASE =
+  (import.meta.env.VITE_API_BASE_URL as string | undefined) ??
+  "http://taskhauler.localhost/api/v1";
 
 function getToken(): string | null {
   try { return localStorage.getItem(TOKEN_KEY); } catch { return null; }
