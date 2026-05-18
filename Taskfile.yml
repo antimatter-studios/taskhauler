@@ -23,7 +23,12 @@ vars:
   POSTGRES_PASSWORD: taskhauler
   POSTGRES_DB: taskhauler
   POSTGRES_CONTAINER: taskhauler-postgres
-  BACKEND_CONTAINER: taskhauler-backend
+  # Each API version is its own deployable. backend-v1 lives in ./backend-v1/
+  # and registers under /api/v1 at the DDT proxy. A future v2 would add a
+  # sibling directory ./backend-v2/ and a second container at /api/v2.
+  BACKEND_V1_DIR: backend-v1
+  BACKEND_V1_CONTAINER: taskhauler-backend-v1
+  BACKEND_V1_IMAGE: taskhauler-backend-v1
   FRONTEND_CONTAINER: taskhauler-frontend
   WEBSITE_CONTAINER: taskhauler-website
   DOMAIN: taskhauler.localhost
@@ -130,62 +135,73 @@ tasks:
     cmds:
       - docker exec -it {{.POSTGRES_CONTAINER}} psql -U {{.POSTGRES_USER}} -d {{.POSTGRES_DB}}
 
-  # ── Backend ─────────────────────────────────────────────────────────────────
+  # ── Backend v1 ──────────────────────────────────────────────────────────────
+  # Each API version is its own image, container, and routing entry. A future
+  # backend-v2 would mirror this whole block under a backend:v2:* namespace,
+  # registered against the same host at path /api/v2.
 
-  backend:build:dev:
-    desc: Build the backend dev image (air HMR)
+  backend:v1:build:dev:
+    desc: Build backend-v1 dev image (air HMR)
     cmds:
-      - docker build --target dev -t {{.PROJECT}}-backend:dev backend/
+      - docker build --target dev -t {{.BACKEND_V1_IMAGE}}:dev {{.BACKEND_V1_DIR}}/
 
-  backend:build:prod:
-    desc: Build the backend prod image (compiled binary)
+  backend:v1:build:prod:
+    desc: Build backend-v1 prod image (compiled binary)
     cmds:
-      - docker build --target prod -t {{.PROJECT}}-backend:latest backend/
+      - docker build --target prod -t {{.BACKEND_V1_IMAGE}}:latest {{.BACKEND_V1_DIR}}/
 
-  backend:dev:
-    desc: Run backend in HMR dev mode (air rebuilds on .go changes)
-    deps: [db:up, backend:build:dev]
+  backend:v1:dev:
+    desc: Run backend-v1 in HMR dev mode (air rebuilds on .go changes)
+    deps: [db:up, backend:v1:build:dev]
     cmds:
-      - task: backend:stop
+      - task: backend:v1:stop
       - |
         docker run -d --rm \
-          --name {{.BACKEND_CONTAINER}} \
+          --name {{.BACKEND_V1_CONTAINER}} \
           --network {{.NETWORK}} \
-          -v $(pwd)/backend:/app \
+          -v $(pwd)/{{.BACKEND_V1_DIR}}:/app \
+          -l docker-proxy.taskhauler-api-v1.host={{.DOMAIN}} \
+          -l docker-proxy.taskhauler-api-v1.port=8080 \
+          -l docker-proxy.taskhauler-api-v1.path=/api/v1 \
           -e DATABASE_URL=postgres://{{.POSTGRES_USER}}:{{.POSTGRES_PASSWORD}}@{{.POSTGRES_CONTAINER}}:5432/{{.POSTGRES_DB}}?sslmode=disable \
           -e JWT_SECRET={{.JWT_SECRET}} \
           -e ADMIN_EMAIL={{.ADMIN_EMAIL}} \
           -e ADMIN_PASSWORD={{.ADMIN_PASSWORD}} \
           -e CORS_ALLOWED_ORIGINS=http://{{.DOMAIN}},http://localhost:3000 \
-          {{.PROJECT}}-backend:dev
+          {{.BACKEND_V1_IMAGE}}:dev
+      - task: net:attach-proxy
 
-  backend:prod:
-    desc: Run backend in prod mode (compiled binary)
-    deps: [db:up, backend:build:prod]
+  backend:v1:prod:
+    desc: Run backend-v1 in prod mode (compiled binary)
+    deps: [db:up, backend:v1:build:prod]
     cmds:
-      - task: backend:stop
+      - task: backend:v1:stop
       - |
         docker run -d --rm \
-          --name {{.BACKEND_CONTAINER}} \
+          --name {{.BACKEND_V1_CONTAINER}} \
           --network {{.NETWORK}} \
+          -l docker-proxy.taskhauler-api-v1.host={{.DOMAIN}} \
+          -l docker-proxy.taskhauler-api-v1.port=8080 \
+          -l docker-proxy.taskhauler-api-v1.path=/api/v1 \
           -e DATABASE_URL=postgres://{{.POSTGRES_USER}}:{{.POSTGRES_PASSWORD}}@{{.POSTGRES_CONTAINER}}:5432/{{.POSTGRES_DB}}?sslmode=disable \
           -e JWT_SECRET={{.JWT_SECRET}} \
           -e ADMIN_EMAIL={{.ADMIN_EMAIL}} \
           -e ADMIN_PASSWORD={{.ADMIN_PASSWORD}} \
           -e CORS_ALLOWED_ORIGINS=http://{{.DOMAIN}} \
-          {{.PROJECT}}-backend:latest
+          {{.BACKEND_V1_IMAGE}}:latest
+      - task: net:attach-proxy
 
-  backend:stop:
+  backend:v1:stop:
     cmds:
-      - docker stop {{.BACKEND_CONTAINER}} 2>/dev/null || true
+      - docker stop {{.BACKEND_V1_CONTAINER}} 2>/dev/null || true
 
-  backend:logs:
+  backend:v1:logs:
     cmds:
-      - docker logs -f {{.BACKEND_CONTAINER}}
+      - docker logs -f {{.BACKEND_V1_CONTAINER}}
 
-  backend:shell:
+  backend:v1:shell:
     cmds:
-      - docker exec -it {{.BACKEND_CONTAINER}} sh
+      - docker exec -it {{.BACKEND_V1_CONTAINER}} sh
 
   # ── Frontend (app) ──────────────────────────────────────────────────────────
 
@@ -212,7 +228,7 @@ tasks:
           -v /app/node_modules \
           -l docker-proxy.taskhauler-app.host={{.DOMAIN}} \
           -l docker-proxy.taskhauler-app.port=3000 \
-          -e VITE_BACKEND_URL=http://{{.BACKEND_CONTAINER}}:8080 \
+          -e VITE_BACKEND_V1_URL=http://{{.BACKEND_V1_CONTAINER}}:8080 \
           {{.PROJECT}}-frontend:dev
       - task: net:attach-proxy
 
@@ -302,22 +318,22 @@ tasks:
   # ── Bundles ─────────────────────────────────────────────────────────────────
 
   dev:
-    desc: Start everything in HMR dev mode (postgres + backend + frontend + website)
+    desc: Start everything in HMR dev mode (postgres + backend-v1 + frontend + website)
     cmds:
       - task: ddt:check
       - task: db:up
-      - task: backend:dev
+      - task: backend:v1:dev
       - task: frontend:dev
       - task: website:dev
       - sleep 2
       - task: urls
 
   prod:
-    desc: Start everything in prod mode (compiled backend + nginx-served frontend/website)
+    desc: Start everything in prod mode (compiled backend-v1 + nginx-served frontend/website)
     cmds:
       - task: ddt:check
       - task: db:up
-      - task: backend:prod
+      - task: backend:v1:prod
       - task: frontend:prod
       - task: website:prod
       - sleep 2
@@ -328,7 +344,7 @@ tasks:
     cmds:
       - task: frontend:stop
       - task: website:stop
-      - task: backend:stop
+      - task: backend:v1:stop
       - task: db:down
 
   urls:
@@ -359,46 +375,46 @@ tasks:
   # ── Data import (TA SQLite → taskhauler Postgres) ───────────────────────────
 
   import:
-    desc: Import existing task data from the teamagentica SQLite DB (read-only)
-    deps: [db:up, backend:build:dev]
+    desc: Import existing task data from the teamagentica SQLite DB (read-only) into backend-v1
+    deps: [db:up, backend:v1:build:dev]
     cmds:
       - |
         docker run --rm \
           --network {{.NETWORK}} \
-          -v $(pwd)/backend:/app \
+          -v $(pwd)/{{.BACKEND_V1_DIR}}:/app \
           -v "{{.TA_SQLITE}}:/data/source.db:ro" \
           -e DATABASE_URL=postgres://{{.POSTGRES_USER}}:{{.POSTGRES_PASSWORD}}@{{.POSTGRES_CONTAINER}}:5432/{{.POSTGRES_DB}}?sslmode=disable \
           --entrypoint sh \
-          {{.PROJECT}}-backend:dev \
+          {{.BACKEND_V1_IMAGE}}:dev \
           -c "go run ./cmd/import-sqlite --source /data/source.db"
 
   import:dry-run:
     desc: Report what would be imported, without writing
-    deps: [db:up, backend:build:dev]
+    deps: [db:up, backend:v1:build:dev]
     cmds:
       - |
         docker run --rm \
           --network {{.NETWORK}} \
-          -v $(pwd)/backend:/app \
+          -v $(pwd)/{{.BACKEND_V1_DIR}}:/app \
           -v "{{.TA_SQLITE}}:/data/source.db:ro" \
           -e DATABASE_URL=postgres://{{.POSTGRES_USER}}:{{.POSTGRES_PASSWORD}}@{{.POSTGRES_CONTAINER}}:5432/{{.POSTGRES_DB}}?sslmode=disable \
           --entrypoint sh \
-          {{.PROJECT}}-backend:dev \
+          {{.BACKEND_V1_IMAGE}}:dev \
           -c "go run ./cmd/import-sqlite --source /data/source.db --dry-run"
 
   # ── OpenAPI ─────────────────────────────────────────────────────────────────
 
-  openapi:gen:
-    desc: Generate openapi.json from Go source via go-oapifly
-    deps: [backend:build:dev]
+  openapi:v1:gen:
+    desc: Generate openapi.json for v1 from Go source via go-oapifly
+    deps: [backend:v1:build:dev]
     cmds:
       - |
         docker run --rm \
-          -v $(pwd)/backend:/app \
+          -v $(pwd)/{{.BACKEND_V1_DIR}}:/app \
           --entrypoint sh \
-          {{.PROJECT}}-backend:dev \
+          {{.BACKEND_V1_IMAGE}}:dev \
           -c "go run ./cmd/generate-openapi --out /app/openapi.json"
-      - echo "Wrote backend/openapi.json"
+      - echo "Wrote {{.BACKEND_V1_DIR}}/openapi.json"
 
   # ── Convenience ─────────────────────────────────────────────────────────────
 
@@ -406,6 +422,6 @@ tasks:
     desc: Stop everything and remove built images
     cmds:
       - task: down
-      - docker rmi {{.PROJECT}}-backend:dev {{.PROJECT}}-backend:latest 2>/dev/null || true
+      - docker rmi {{.BACKEND_V1_IMAGE}}:dev {{.BACKEND_V1_IMAGE}}:latest 2>/dev/null || true
       - docker rmi {{.PROJECT}}-frontend:dev {{.PROJECT}}-frontend:latest 2>/dev/null || true
       - docker rmi {{.PROJECT}}-website:dev {{.PROJECT}}-website:latest 2>/dev/null || true

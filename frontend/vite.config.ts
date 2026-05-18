@@ -6,7 +6,11 @@ import tailwindcss from '@tailwindcss/vite'
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
-  const backendUrl = env.VITE_BACKEND_URL || 'http://backend:8080'
+  // When traffic reaches the frontend via the DDT reverse proxy, /api/v1
+  // never gets here — DDT routes it straight to taskhauler-backend-v1.
+  // This proxy block only matters for raw `vite` dev hits on localhost:3000.
+  // Each API version maps to its own deployable; add a new block per version.
+  const backendV1 = env.VITE_BACKEND_V1_URL || 'http://taskhauler-backend-v1:8080'
 
   return {
     plugins: [tailwindcss(), react()],
@@ -23,8 +27,8 @@ export default defineConfig(({ mode }) => {
         clientPort: 3000,
       },
       proxy: {
-        '/api': {
-          target: backendUrl,
+        '/api/v1': {
+          target: backendV1,
           changeOrigin: true,
         },
       },
