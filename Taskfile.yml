@@ -33,8 +33,9 @@ vars:
   WEBSITE_CONTAINER: taskhauler-website
   DOMAIN: taskhauler.localhost
   MARKETING_DOMAIN: marketing.taskhauler.localhost
-  # Source TA SQLite DB (read-only) for one-shot import
+  # Source TA SQLite DBs (read-only) for one-shot import
   TA_SQLITE: /Volumes/sdcard256gb/projects/agentplatform/teamagentica/data/storage-disk/storage-root/private/tool-task-tracker/tasks.db
+  TA_USERS_SQLITE: /Volumes/sdcard256gb/projects/agentplatform/teamagentica/data/storage-disk/storage-root/private/system-user-manager/users.db
   JWT_SECRET: dev-secret-change-me-in-prod-{{.PROJECT}}
   ADMIN_EMAIL: admin@taskhauler.localhost
   ADMIN_PASSWORD: admin
@@ -415,6 +416,40 @@ tasks:
           --entrypoint sh \
           {{.BACKEND_V1_IMAGE}}:dev \
           -c "go run ./cmd/import-sqlite --source /data/source.db --dry-run"
+
+  import:users:
+    desc: Import users from the teamagentica system-user-manager SQLite DB (read-only)
+    deps: [db:up, backend:v1:build:dev]
+    cmds:
+      - |
+        docker run --rm \
+          --network {{.NETWORK}} \
+          -v $(pwd)/{{.BACKEND_V1_DIR}}:/app \
+          -v "{{.TA_USERS_SQLITE}}:/data/users.db:ro" \
+          -e DATABASE_URL=postgres://{{.POSTGRES_USER}}:{{.POSTGRES_PASSWORD}}@{{.POSTGRES_CONTAINER}}:5432/{{.POSTGRES_DB}}?sslmode=disable \
+          --entrypoint sh \
+          {{.BACKEND_V1_IMAGE}}:dev \
+          -c "go run ./cmd/import-users --source /data/users.db"
+
+  import:users:dry-run:
+    desc: Report which users would be imported, without writing
+    deps: [db:up, backend:v1:build:dev]
+    cmds:
+      - |
+        docker run --rm \
+          --network {{.NETWORK}} \
+          -v $(pwd)/{{.BACKEND_V1_DIR}}:/app \
+          -v "{{.TA_USERS_SQLITE}}:/data/users.db:ro" \
+          -e DATABASE_URL=postgres://{{.POSTGRES_USER}}:{{.POSTGRES_PASSWORD}}@{{.POSTGRES_CONTAINER}}:5432/{{.POSTGRES_DB}}?sslmode=disable \
+          --entrypoint sh \
+          {{.BACKEND_V1_IMAGE}}:dev \
+          -c "go run ./cmd/import-users --source /data/users.db --dry-run"
+
+  import:all:
+    desc: Run both task-tracker and user imports in order
+    cmds:
+      - task: import:users
+      - task: import
 
   # ── OpenAPI ─────────────────────────────────────────────────────────────────
 

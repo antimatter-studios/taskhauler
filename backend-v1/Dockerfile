@@ -12,7 +12,8 @@ RUN go mod download
 COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /taskhauler-backend . \
- && CGO_ENABLED=1 GOOS=linux go build -trimpath -ldflags="-s -w -linkmode external -extldflags=-static" -o /taskhauler-import-sqlite ./cmd/import-sqlite
+ && CGO_ENABLED=1 GOOS=linux go build -trimpath -ldflags="-s -w -linkmode external -extldflags=-static" -o /taskhauler-import-sqlite ./cmd/import-sqlite \
+ && CGO_ENABLED=1 GOOS=linux go build -trimpath -ldflags="-s -w -linkmode external -extldflags=-static" -o /taskhauler-import-users ./cmd/import-users
 
 # ── Dev (hot reload via air) ───────────────────────────────────────────────────
 FROM golang:1.26-alpine AS dev
@@ -40,6 +41,7 @@ RUN apk add --no-cache ca-certificates tzdata \
 
 COPY --from=builder /taskhauler-backend /usr/local/bin/taskhauler-backend
 COPY --from=builder /taskhauler-import-sqlite /usr/local/bin/taskhauler-import-sqlite
+COPY --from=builder /taskhauler-import-users /usr/local/bin/taskhauler-import-users
 
 USER taskhauler
 EXPOSE 8080
