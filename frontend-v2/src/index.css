@@ -1,0 +1,223 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/*
+  Taskhauler frontend-v2 theme system.
+
+  Three themes selected via the `data-theme` attribute on <html>:
+    • day   — cool neutral with indigo accent (default)
+    • mono  — black + amber, terminal aesthetic
+    • paper — warm cream with burnt orange accent
+
+  Token values are taken verbatim from the design spec's "Design tokens"
+  section in frontend-v2-src/README.md.
+*/
+
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
+  --color-card: var(--surface);
+  --color-card-foreground: var(--text);
+  --color-popover: var(--surface);
+  --color-popover-foreground: var(--text);
+  --color-primary: var(--accent);
+  --color-primary-foreground: var(--accent-fg);
+  --color-secondary: var(--hover);
+  --color-secondary-foreground: var(--text);
+  --color-muted: var(--hover);
+  --color-muted-foreground: var(--text-2);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-fg);
+  --color-destructive: var(--red);
+  --color-destructive-foreground: var(--accent-fg);
+  --color-border: var(--border);
+  --color-input: var(--border);
+  --color-ring: var(--accent);
+  --color-text-2: var(--text-2);
+  --color-text-3: var(--text-3);
+  --color-accent-bg: var(--accent-bg);
+  --color-border-hi: var(--border-hi);
+  --color-red: var(--red);
+  --color-amber: var(--amber);
+  --color-green: var(--green);
+  --font-sans: var(--font);
+  --font-mono: var(--mono);
+  --radius: var(--radius);
+}
+
+/* ── Day (default) ───────────────────────────────────────────────────── */
+:root,
+:root[data-theme="day"] {
+  --bg: #fafaf9;
+  --surface: #ffffff;
+  --hover: #f4f4f3;
+  --border: #e7e5e0;
+  --border-hi: #d6d3cd;
+  --text: #18181b;
+  --text-2: #52525b;
+  --text-3: #a1a1aa;
+  --accent: #5b5bd6;
+  --accent-bg: #eef0ff;
+  --accent-fg: #ffffff;
+  --red: #dc2626;
+  --amber: #f59e0b;
+  --green: #16a34a;
+  --font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: "Geist Mono", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo,
+    Monaco, Consolas, monospace;
+  --radius: 6px;
+
+  /* Elevation tiers (theme-overridable) */
+  --shadow-rest: 0 1px 0 rgba(0, 0, 0, 0.02);
+  --shadow-hover: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --shadow-modal: 0 30px 80px rgba(0, 0, 0, 0.25);
+}
+
+/* ── Mono ────────────────────────────────────────────────────────────── */
+:root[data-theme="mono"] {
+  --bg: #0c0c0a;
+  --surface: #15140f;
+  --hover: #1e1c14;
+  --border: #2a2820;
+  --border-hi: #3b3826;
+  --text: #e8d9b0;
+  --text-2: #a89770;
+  --text-3: #6b6044;
+  --accent: #facc15;
+  --accent-bg: rgba(250, 204, 21, 0.10);
+  --accent-fg: #1c1917;
+  --red: #f87171;
+  --amber: #fbbf24;
+  --green: #84cc16;
+  --font: "JetBrains Mono", "Geist Mono", ui-monospace, SFMono-Regular, Menlo,
+    Monaco, Consolas, monospace;
+  --mono: "JetBrains Mono", "Geist Mono", ui-monospace, SFMono-Regular, Menlo,
+    Monaco, Consolas, monospace;
+  --radius: 2px;
+
+  /* Mono drops shadows in favor of 1px solid borders */
+  --shadow-rest: none;
+  --shadow-hover: none;
+  --shadow-modal: 0 30px 80px rgba(0, 0, 0, 0.6);
+}
+
+/* ── Paper ───────────────────────────────────────────────────────────── */
+:root[data-theme="paper"] {
+  --bg: #f5f0e2;
+  --surface: #fbf7e9;
+  --hover: #ede6cf;
+  --border: #d4cab2;
+  --border-hi: #b8ad8f;
+  --text: #2a251c;
+  --text-2: #5e574a;
+  --text-3: #9a8f78;
+  --accent: #9a3412;
+  --accent-bg: #fef0e2;
+  --accent-fg: #ffffff;
+  --red: #b91c1c;
+  --amber: #a16207;
+  --green: #65a30d;
+  --font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: "Geist Mono", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo,
+    Monaco, Consolas, monospace;
+  --radius: 4px;
+
+  --shadow-rest: 0 1px 0 rgba(0, 0, 0, 0.03);
+  --shadow-hover: 0 1px 2px rgba(0, 0, 0, 0.10);
+  --shadow-modal: 0 30px 80px rgba(0, 0, 0, 0.20);
+}
+
+/* ── Animations ──────────────────────────────────────────────────────── */
+
+@keyframes presence-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.4);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+/* ── Base layout ─────────────────────────────────────────────────────── */
+
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--border);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-hi);
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--accent-fg);
+}

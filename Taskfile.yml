@@ -30,8 +30,10 @@ vars:
   BACKEND_V1_CONTAINER: taskhauler-backend-v1
   BACKEND_V1_IMAGE: taskhauler-backend-v1
   FRONTEND_CONTAINER: taskhauler-frontend
+  FRONTEND_V2_CONTAINER: taskhauler-frontend-v2
   WEBSITE_CONTAINER: taskhauler-website
   DOMAIN: taskhauler.localhost
+  DOMAIN_V2: taskhauler-v2.localhost
   MARKETING_DOMAIN: marketing.taskhauler.localhost
   # Source TA SQLite DBs (read-only) for one-shot import
   TA_SQLITE: /Volumes/sdcard256gb/projects/agentplatform/teamagentica/data/storage-disk/storage-root/private/tool-task-tracker/tasks.db
@@ -265,6 +267,61 @@ tasks:
     cmds:
       - docker logs -f {{.FRONTEND_CONTAINER}}
 
+  # ── Frontend v2 (redesigned UI) ─────────────────────────────────────────────
+
+  frontend:v2:build:dev:
+    desc: Build the frontend-v2 dev image (vite HMR)
+    cmds:
+      - docker build --target dev -t {{.PROJECT}}-frontend-v2:dev frontend-v2/
+
+  frontend:v2:build:prod:
+    desc: Build the frontend-v2 prod image (nginx + bundled assets)
+    cmds:
+      - docker build --target prod -t {{.PROJECT}}-frontend-v2:latest frontend-v2/
+
+  frontend:v2:dev:
+    desc: Run frontend-v2 in HMR dev mode (vite)
+    deps: [frontend:v2:build:dev]
+    cmds:
+      - task: frontend:v2:stop
+      - |
+        docker run -d --rm \
+          --name {{.FRONTEND_V2_CONTAINER}} \
+          --network {{.NETWORK}} \
+          -v $(pwd)/frontend-v2:/app \
+          -v /app/node_modules \
+          -l com.docker.compose.project={{.PROJECT}} \
+          -l com.docker.compose.service=frontend-v2 \
+          -l docker-proxy.taskhauler-app-v2.host={{.DOMAIN_V2}} \
+          -l docker-proxy.taskhauler-app-v2.port=3000 \
+          -e VITE_BACKEND_V1_URL=http://{{.BACKEND_V1_CONTAINER}}:8080 \
+          {{.PROJECT}}-frontend-v2:dev
+      - task: net:attach-proxy
+
+  frontend:v2:prod:
+    desc: Run frontend-v2 in prod mode (nginx serving built assets)
+    deps: [frontend:v2:build:prod]
+    cmds:
+      - task: frontend:v2:stop
+      - |
+        docker run -d --rm \
+          --name {{.FRONTEND_V2_CONTAINER}} \
+          --network {{.NETWORK}} \
+          -l com.docker.compose.project={{.PROJECT}} \
+          -l com.docker.compose.service=frontend-v2 \
+          -l docker-proxy.taskhauler-app-v2.host={{.DOMAIN_V2}} \
+          -l docker-proxy.taskhauler-app-v2.port=80 \
+          {{.PROJECT}}-frontend-v2:latest
+      - task: net:attach-proxy
+
+  frontend:v2:stop:
+    cmds:
+      - docker stop {{.FRONTEND_V2_CONTAINER}} 2>/dev/null || true
+
+  frontend:v2:logs:
+    cmds:
+      - docker logs -f {{.FRONTEND_V2_CONTAINER}}
+
   # ── Website (marketing) ─────────────────────────────────────────────────────
 
   website:build:dev:
@@ -333,23 +390,25 @@ tasks:
   # ── Bundles ─────────────────────────────────────────────────────────────────
 
   dev:
-    desc: Start everything in HMR dev mode (postgres + backend-v1 + frontend + website)
+    desc: Start everything in HMR dev mode (postgres + backend-v1 + frontend + frontend-v2 + website)
     cmds:
       - task: ddt:check
       - task: db:up
       - task: backend:v1:dev
       - task: frontend:dev
+      - task: frontend:v2:dev
       - task: website:dev
       - sleep 2
       - task: urls
 
   prod:
-    desc: Start everything in prod mode (compiled backend-v1 + nginx-served frontend/website)
+    desc: Start everything in prod mode (compiled backend-v1 + nginx-served frontend/v2/website)
     cmds:
       - task: ddt:check
       - task: db:up
       - task: backend:v1:prod
       - task: frontend:prod
+      - task: frontend:v2:prod
       - task: website:prod
       - sleep 2
       - task: urls
@@ -358,6 +417,7 @@ tasks:
     desc: Stop all containers (keeps Postgres volume)
     cmds:
       - task: frontend:stop
+      - task: frontend:v2:stop
       - task: website:stop
       - task: backend:v1:stop
       - task: db:down
@@ -369,7 +429,8 @@ tasks:
         echo ""
         echo "── Taskhauler is running ──────────────────────────────────"
         echo ""
-        echo "  App:           http://{{.DOMAIN}}"
+        echo "  App (v1):      http://{{.DOMAIN}}"
+        echo "  App (v2):      http://{{.DOMAIN_V2}}"
         echo "  Marketing:     http://{{.MARKETING_DOMAIN}}"
         echo "  API:           http://{{.DOMAIN}}/api/v1"
         echo "  OpenAPI spec:  http://{{.DOMAIN}}/api/v1/openapi.json"
