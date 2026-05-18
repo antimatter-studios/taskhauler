@@ -23,6 +23,7 @@ Taskfile.yml  Orchestrator — raw `docker run` for postgres, backend, frontend,
 ## Design notes
 
 - [docs/zitadel.md](docs/zitadel.md) — planned migration from local JWT auth to a central ZITADEL-based IdP serving the whole Antimatter Studios ecosystem.
+- [docs/frontend-v2-status.md](docs/frontend-v2-status.md) — feature status + mock-data strategy for the `frontend-v2` redesign. 100% prototype-fidelity UI now; mocks get swapped for live API as endpoints land.
 
 ## Quick start (local dev)
 
