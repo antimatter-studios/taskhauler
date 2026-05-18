@@ -1,10 +1,5 @@
 import { useState, type FormEvent } from "react";
 import { useAuthStore } from "../stores/authStore";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function LoginForm() {
   const login = useAuthStore((s) => s.login);
@@ -24,57 +19,158 @@ export default function LoginForm() {
   }
 
   return (
-    <div className="flex h-full w-full items-center justify-center p-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle className="text-xl">Taskhauler</CardTitle>
-          <CardDescription>Sign in to your account</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email"
-                autoFocus
-                required
-              />
+    <div
+      className="flex h-full w-full items-center justify-center p-4"
+      style={{
+        background: "var(--bg)",
+        color: "var(--text)",
+        fontFamily: "var(--font)",
+      }}
+    >
+      <div
+        className="w-full max-w-sm rounded-md"
+        style={{
+          background: "var(--surface)",
+          border: "1px solid var(--border)",
+          padding: 24,
+          boxShadow: "var(--shadow-rest)",
+        }}
+      >
+        <div className="mb-4">
+          <div
+            style={{
+              fontSize: 20,
+              fontWeight: 600,
+              letterSpacing: -0.3,
+              color: "var(--text)",
+            }}
+          >
+            Taskhauler
+          </div>
+          <div
+            style={{ fontSize: 12, color: "var(--text-2)", marginTop: 2 }}
+          >
+            Sign in to your account
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <label
+              htmlFor="email"
+              style={{
+                fontSize: 12,
+                fontWeight: 500,
+                color: "var(--text-2)",
+              }}
+            >
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
+              autoFocus
+              required
+              className="outline-none transition-colors focus:border-[var(--accent)]"
+              style={{
+                height: 32,
+                padding: "0 10px",
+                fontSize: 13,
+                color: "var(--text)",
+                background: "var(--bg)",
+                border: "1px solid var(--border)",
+                borderRadius: 6,
+              }}
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label
+              htmlFor="password"
+              style={{
+                fontSize: 12,
+                fontWeight: 500,
+                color: "var(--text-2)",
+              }}
+            >
+              Password
+            </label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+              required
+              className="outline-none transition-colors focus:border-[var(--accent)]"
+              style={{
+                height: 32,
+                padding: "0 10px",
+                fontSize: 13,
+                color: "var(--text)",
+                background: "var(--bg)",
+                border: "1px solid var(--border)",
+                borderRadius: 6,
+              }}
+            />
+          </div>
+
+          {error && (
+            <div
+              role="alert"
+              style={{
+                fontSize: 12,
+                color: "var(--red)",
+                background:
+                  "color-mix(in srgb, var(--red) 8%, var(--surface))",
+                border: "1px solid color-mix(in srgb, var(--red) 30%, var(--border))",
+                padding: "8px 10px",
+                borderRadius: 6,
+              }}
+            >
+              {error}
             </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="current-password"
-                required
-              />
-            </div>
+          )}
 
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
+          <button
+            type="submit"
+            disabled={loading || !email || !password}
+            className="transition-opacity disabled:opacity-50"
+            style={{
+              height: 34,
+              background: "var(--accent)",
+              color: "var(--accent-fg)",
+              border: "none",
+              borderRadius: 6,
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: loading || !email || !password ? "not-allowed" : "pointer",
+            }}
+          >
+            {loading ? "Signing in…" : "Sign in"}
+          </button>
 
-            <Button type="submit" disabled={loading || !email || !password}>
-              {loading ? "Signing in..." : "Sign in"}
-            </Button>
-
-            {import.meta.env.DEV && (
-              <div className="rounded-md border border-dashed p-3 text-xs text-muted-foreground">
-                <div className="font-semibold">Dev hint</div>
-                <div>admin@taskhauler.localhost / admin</div>
+          {import.meta.env.DEV && (
+            <div
+              style={{
+                fontSize: 11,
+                color: "var(--text-3)",
+                border: "1px dashed var(--border)",
+                borderRadius: 6,
+                padding: 10,
+              }}
+            >
+              <div style={{ fontWeight: 600, color: "var(--text-2)" }}>
+                Dev hint
               </div>
-            )}
-          </form>
-        </CardContent>
-      </Card>
+              <div>admin@taskhauler.localhost / admin</div>
+            </div>
+          )}
+        </form>
+      </div>
     </div>
   );
 }

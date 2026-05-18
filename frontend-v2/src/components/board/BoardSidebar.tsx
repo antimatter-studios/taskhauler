@@ -21,7 +21,7 @@ export default function BoardSidebar() {
   const myIssuesCount = user
     ? cards.filter((c) => c.assignee_id === user.id).length
     : 0;
-  const inboxCount = (MOCK_INBOX as { length: number } | undefined)?.length ?? 0;
+  const inboxCount = MOCK_INBOX ?? 0;
   const suggestionsCount = MOCK_SUGGESTIONS?.length ?? 0;
 
   return (
