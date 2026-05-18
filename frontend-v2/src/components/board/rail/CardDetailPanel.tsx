@@ -1,5 +1,11 @@
-import { useMemo, type CSSProperties, type ReactNode } from "react";
-import { Maximize2, X, Sparkles } from "lucide-react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
+import { Maximize2, X, Sparkles, Trash2 } from "lucide-react";
 import { useKanbanStore } from "@/stores/kanbanStore";
 import { useBoardUIStore } from "@/stores/boardUIStore";
 import { MOCK_ACTIVITY } from "@/mock/activity";
@@ -7,8 +13,8 @@ import type { ActivityEvent } from "@/mock/activity";
 import { MOCK_SUGGESTIONS } from "@/mock/suggestions";
 import { MOCK_TELEMETRY } from "@/mock/telemetry";
 import { MOCK_USERS } from "@/mock/users";
-import { fmtDue } from "@/lib/time";
-import type { Card } from "@/api/types";
+import { fmtDue, fmtAgo } from "@/lib/time";
+import type { Card, Comment } from "@/api/types";
 import AssigneeChip from "../primitives/AssigneeChip";
 import PriorityIndicator from "../primitives/PriorityIndicator";
 import EpicChip from "../primitives/EpicChip";
@@ -77,12 +83,71 @@ export default function CardDetailPanel({ cardId }: CardDetailPanelProps) {
   const cards = useKanbanStore((s) => s.cards);
   const columns = useKanbanStore((s) => s.columns);
   const epics = useKanbanStore((s) => s.epics);
+  const boards = useKanbanStore((s) => s.boards);
+  const activeBoardId = useKanbanStore((s) => s.activeBoardId);
+  const listComments = useKanbanStore((s) => s.listComments);
+  const createComment = useKanbanStore((s) => s.createComment);
+  const deleteComment = useKanbanStore((s) => s.deleteComment);
 
   const selectCard = useBoardUIStore((s) => s.selectCard);
   const focusCard = useBoardUIStore((s) => s.focusCard);
 
+  const activeBoard = boards.find((b) => b.id === activeBoardId);
+  const cardPrefix = (activeBoard?.prefix || "TH").toUpperCase();
+
   const sortedCards = useMemo(() => indexCards(cards), [cards]);
   const card = cards.find((c) => c.id === cardId);
+
+  // ── Comments: real, from /api/v1/cards/:cid/comments ────────────────────
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [draft, setDraft] = useState("");
+  const [postingComment, setPostingComment] = useState(false);
+  const [commentsError, setCommentsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!cardId) {
+      setComments([]);
+      return;
+    }
+    let alive = true;
+    setCommentsError(null);
+    listComments(cardId)
+      .then((list) => {
+        if (alive) setComments(list);
+      })
+      .catch((e) => {
+        if (alive) setCommentsError(String(e?.message ?? e));
+      });
+    return () => {
+      alive = false;
+    };
+  }, [cardId, listComments]);
+
+  async function handleAddComment(): Promise<void> {
+    const body = draft.trim();
+    if (!body || !cardId) return;
+    setPostingComment(true);
+    try {
+      const created = await createComment(cardId, body);
+      setComments((prev) => [...prev, created]);
+      setDraft("");
+    } catch (e) {
+      setCommentsError(String((e as Error)?.message ?? e));
+    } finally {
+      setPostingComment(false);
+    }
+  }
+
+  async function handleDeleteComment(commentId: string): Promise<void> {
+    if (!cardId) return;
+    if (!confirm("Delete this comment?")) return;
+    try {
+      await deleteComment(cardId, commentId);
+      setComments((prev) => prev.filter((c) => c.id !== commentId));
+    } catch (e) {
+      setCommentsError(String((e as Error)?.message ?? e));
+    }
+  }
 
   if (!card) {
     return (
@@ -199,7 +264,7 @@ export default function CardDetailPanel({ cardId }: CardDetailPanelProps) {
             color: "var(--text-3)",
           }}
         >
-          HAUL-{card.number}
+          {cardPrefix}-{card.number}
         </span>
         <span
           style={{
@@ -455,6 +520,134 @@ export default function CardDetailPanel({ cardId }: CardDetailPanelProps) {
             </div>
           </div>
         )}
+
+        {/* Real comments from /api/v1/cards/:cid/comments */}
+        <div>
+          <div style={sectionHeaderStyle}>
+            Comments {comments.length > 0 && <span style={{ color: "var(--text-2)", marginLeft: 4 }}>· {comments.length}</span>}
+          </div>
+          {commentsError && (
+            <div
+              style={{
+                fontSize: 11,
+                color: "var(--red)",
+                padding: 8,
+                border: "1px solid var(--red)",
+                borderRadius: 4,
+                marginBottom: 8,
+              }}
+            >
+              {commentsError}
+            </div>
+          )}
+          {comments.length === 0 ? (
+            <span style={{ fontSize: 11.5, color: "var(--text-3)" }}>
+              No comments yet.
+            </span>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {comments.map((c) => (
+                <div
+                  key={c.id}
+                  style={{
+                    padding: 10,
+                    border: "1px solid var(--border)",
+                    borderRadius: 6,
+                    background: "var(--bg)",
+                    fontSize: 12,
+                    color: "var(--text)",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 8,
+                      marginBottom: 6,
+                      fontSize: 10.5,
+                      color: "var(--text-3)",
+                    }}
+                  >
+                    <span style={{ fontWeight: 600, color: "var(--text-2)" }}>
+                      {c.author_name || `user #${c.author_id}` || "unknown"}
+                    </span>
+                    <span title={new Date(c.created_at).toLocaleString()}>
+                      {fmtAgo(c.created_at)} ago
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteComment(c.id)}
+                      title="Delete comment"
+                      style={{
+                        marginLeft: "auto",
+                        height: 20,
+                        padding: "0 4px",
+                        background: "transparent",
+                        border: "none",
+                        color: "var(--text-3)",
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                      }}
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                  <div style={{ whiteSpace: "pre-wrap", lineHeight: 1.4 }}>{c.body}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Add-comment composer */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 10 }}>
+            <textarea
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && draft.trim()) {
+                  e.preventDefault();
+                  handleAddComment();
+                }
+              }}
+              placeholder="Write a comment…"
+              rows={3}
+              style={{
+                resize: "vertical",
+                fontFamily: "var(--font-sans)",
+                fontSize: 12,
+                padding: 8,
+                border: "1px solid var(--border)",
+                borderRadius: 4,
+                background: "var(--surface)",
+                color: "var(--text)",
+              }}
+            />
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 10.5, color: "var(--text-3)" }}>⌘/Ctrl + Enter</span>
+              <button
+                type="button"
+                onClick={handleAddComment}
+                disabled={!draft.trim() || postingComment}
+                style={{
+                  marginLeft: "auto",
+                  height: 24,
+                  padding: "0 10px",
+                  border: "1px solid var(--accent)",
+                  borderRadius: 4,
+                  background: !draft.trim() ? "var(--bg)" : "var(--accent)",
+                  color: !draft.trim() ? "var(--text-3)" : "var(--accent-fg)",
+                  fontSize: 11,
+                  fontWeight: 600,
+                  cursor: !draft.trim() || postingComment ? "not-allowed" : "pointer",
+                  opacity: !draft.trim() || postingComment ? 0.6 : 1,
+                }}
+              >
+                {postingComment ? "Posting…" : "Add comment"}
+              </button>
+            </div>
+          </div>
+        </div>
 
         <div>
           <div style={sectionHeaderStyle}>AI suggested</div>

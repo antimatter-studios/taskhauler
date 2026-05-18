@@ -80,8 +80,12 @@ export default function FocusModal() {
   const cards = useKanbanStore((s) => s.cards);
   const columns = useKanbanStore((s) => s.columns);
   const epics = useKanbanStore((s) => s.epics);
+  const boards = useKanbanStore((s) => s.boards);
   const activeBoardId = useKanbanStore((s) => s.activeBoardId);
   const updateCard = useKanbanStore((s) => s.updateCard);
+
+  const activeBoard = boards.find((b) => b.id === activeBoardId);
+  const cardPrefix = (activeBoard?.prefix || "TH").toUpperCase();
 
   const sortedCards = useMemo(() => indexCards(cards), [cards]);
   const card = useMemo(
@@ -223,7 +227,7 @@ export default function FocusModal() {
               color: "var(--accent)",
             }}
           >
-            HAUL-{card.number}
+            {cardPrefix}-{card.number}
           </span>
           {isBug && (
             <span
