@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
+	"unicode"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -14,6 +16,74 @@ import (
 	"github.com/antimatter-studios/taskhauler/backend/internal/storage"
 	"github.com/antimatter-studios/taskhauler/backend/internal/users"
 )
+
+// derivePrefix produces a short uppercase prefix from a board name. Strategy:
+// multi-word names use first letters of each word ("Infrastructure Platform"
+// → "IP"); single-word names take the first 4 letters ("Roadmap" → "ROAD").
+// Returns "" if the name has no usable letters/digits.
+func derivePrefix(name string) string {
+	stop := map[string]bool{"the": true, "a": true, "an": true, "of": true, "for": true, "and": true}
+	words := strings.FieldsFunc(name, func(r rune) bool {
+		return !unicode.IsLetter(r) && !unicode.IsDigit(r)
+	})
+	kept := make([]string, 0, len(words))
+	for _, w := range words {
+		if !stop[strings.ToLower(w)] {
+			kept = append(kept, w)
+		}
+	}
+	if len(kept) == 0 {
+		return ""
+	}
+	var prefix string
+	if len(kept) == 1 {
+		w := kept[0]
+		if len(w) > 4 {
+			w = w[:4]
+		}
+		prefix = w
+	} else {
+		var b strings.Builder
+		for _, w := range kept {
+			if len(w) > 0 {
+				b.WriteByte(w[0])
+				if b.Len() >= 5 {
+					break
+				}
+			}
+		}
+		prefix = b.String()
+	}
+	return strings.ToUpper(prefix)
+}
+
+// uniqueBoardPrefix returns prefix unchanged if no live board already uses it;
+// otherwise appends 2, 3, … until a free slot is found. Empty input returns "".
+func (h *Handler) uniqueBoardPrefix(prefix string) string {
+	if prefix == "" {
+		return ""
+	}
+	boards, err := h.db.ListBoards()
+	if err != nil {
+		return prefix
+	}
+	taken := make(map[string]bool, len(boards))
+	for _, b := range boards {
+		if b.Prefix != "" {
+			taken[b.Prefix] = true
+		}
+	}
+	if !taken[prefix] {
+		return prefix
+	}
+	for i := 2; i < 1000; i++ {
+		candidate := fmt.Sprintf("%s%d", prefix, i)
+		if !taken[candidate] {
+			return candidate
+		}
+	}
+	return prefix
+}
 
 // Handler is the HTTP handler set for the task-tracker API + MCP endpoints.
 type Handler struct {
@@ -225,10 +295,15 @@ func (h *Handler) CreateBoard(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	prefix := strings.TrimSpace(strings.ToUpper(req.Prefix))
+	if prefix == "" {
+		prefix = derivePrefix(req.Name)
+	}
+	prefix = h.uniqueBoardPrefix(prefix)
 	b := &storage.Board{
 		ID:          uuid.New().String(),
 		Name:        req.Name,
-		Prefix:      req.Prefix,
+		Prefix:      prefix,
 		Description: req.Description,
 	}
 	if err := h.db.CreateBoard(b); err != nil {
@@ -1100,11 +1175,16 @@ func (h *Handler) MCPCreateBoard(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	prefix := strings.TrimSpace(strings.ToUpper(req.Prefix))
+	if prefix == "" {
+		prefix = derivePrefix(req.Name)
+	}
+	prefix = h.uniqueBoardPrefix(prefix)
 
 	b := &storage.Board{
 		ID:          uuid.New().String(),
 		Name:        req.Name,
-		Prefix:      req.Prefix,
+		Prefix:      prefix,
 		Description: req.Description,
 	}
 	if err := h.db.CreateBoard(b); err != nil {

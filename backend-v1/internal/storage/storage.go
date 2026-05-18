@@ -8,7 +8,7 @@ import (
 type Board struct {
 	ID          string         `gorm:"primaryKey" json:"id"`
 	Name        string         `json:"name"`
-	Prefix      string         `gorm:"uniqueIndex" json:"prefix"`
+	Prefix      string         `json:"prefix"`
 	Description string         `json:"description"`
 	CreatedAt   int64          `gorm:"autoCreateTime:milli" json:"created_at"`
 	UpdatedAt   int64          `gorm:"autoUpdateTime:milli" json:"updated_at"`
