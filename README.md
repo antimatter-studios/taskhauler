@@ -20,6 +20,10 @@ Taskfile.yml  Orchestrator — raw `docker run` for postgres, backend, frontend,
               DDT (docker-dev-tools) provides the reverse proxy + .localhost DNS.
 ```
 
+## Design notes
+
+- [docs/zitadel.md](docs/zitadel.md) — planned migration from local JWT auth to a central ZITADEL-based IdP serving the whole Antimatter Studios ecosystem.
+
 ## Quick start (local dev)
 
 Prerequisites: Docker, [task](https://taskfile.dev), [ddt](https://github.com/antimatter-studios/ddt).
