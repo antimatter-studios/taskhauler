@@ -1,0 +1,411 @@
+version: '3'
+
+# Taskhauler local dev/prod orchestration.
+#
+# Uses raw `docker run` (no docker-compose). DDT (https://github.com/antimatter-studios/ddt)
+# provides the reverse proxy + DNS for *.localhost. Each user-facing container exposes
+# a VIRTUAL_HOST env var; the DDT proxy auto-routes by hostname.
+#
+# First-time setup:
+#   docker pull postgres:16-alpine
+#   ddt start                 # DNS + reverse proxy
+#   task dev                  # HMR everything
+#
+# Then open:
+#   http://taskhauler.localhost            (app)
+#   http://marketing.taskhauler.localhost  (marketing site)
+
+vars:
+  PROJECT: taskhauler
+  NETWORK: taskhauler-net
+  POSTGRES_IMAGE: postgres:16-alpine
+  POSTGRES_USER: taskhauler
+  POSTGRES_PASSWORD: taskhauler
+  POSTGRES_DB: taskhauler
+  POSTGRES_CONTAINER: taskhauler-postgres
+  BACKEND_CONTAINER: taskhauler-backend
+  FRONTEND_CONTAINER: taskhauler-frontend
+  WEBSITE_CONTAINER: taskhauler-website
+  DOMAIN: taskhauler.localhost
+  MARKETING_DOMAIN: marketing.taskhauler.localhost
+  # Source TA SQLite DB (read-only) for one-shot import
+  TA_SQLITE: /Volumes/sdcard256gb/projects/agentplatform/teamagentica/data/storage-disk/storage-root/private/tool-task-tracker/tasks.db
+  JWT_SECRET: dev-secret-change-me-in-prod-{{.PROJECT}}
+  ADMIN_EMAIL: admin@taskhauler.localhost
+  ADMIN_PASSWORD: admin
+
+tasks:
+  default:
+    cmds:
+      - task --list-all
+
+  # ── First-time setup ────────────────────────────────────────────────────────
+
+  setup:
+    desc: First-time setup (network, ddt check, pull images)
+    cmds:
+      - task: net:create
+      - task: ddt:check
+      - docker pull {{.POSTGRES_IMAGE}}
+      - echo ""
+      - echo "Setup complete. Run 'task dev' to start everything in HMR mode."
+
+  ddt:check:
+    desc: Verify DDT proxy + DNS are running and .localhost resolves
+    cmds:
+      - ddt status
+      - |
+        if ! docker ps --format '{{`{{.Names}}`}}' | grep -q '^ddt-proxy$'; then
+          echo ""
+          echo "⚠  ddt-proxy is not running. Start it with: ddt start"
+          exit 1
+        fi
+      - |
+        if ! ddt dns list 2>&1 | grep -q 'localhost'; then
+          echo "⚠  .localhost TLD not registered in DDT. Run: ddt dns add-tld localhost"
+        fi
+
+  net:create:
+    desc: Create the shared docker network
+    cmds:
+      - docker network inspect {{.NETWORK}} >/dev/null 2>&1 || docker network create {{.NETWORK}}
+      # Connect the DDT proxy to our network so it can reach the frontend/website containers
+      - |
+        if docker ps --format '{{`{{.Names}}`}}' | grep -q '^ddt-proxy$'; then
+          docker network connect {{.NETWORK}} ddt-proxy 2>/dev/null || true
+        fi
+
+  net:rm:
+    desc: Remove the shared docker network (containers must be stopped first)
+    cmds:
+      - docker network rm {{.NETWORK}} 2>/dev/null || true
+
+  # ── Postgres ────────────────────────────────────────────────────────────────
+
+  db:up:
+    desc: Start the Postgres container
+    deps: [net:create]
+    status:
+      - docker ps --format '{{`{{.Names}}`}}' | grep -q '^{{.POSTGRES_CONTAINER}}$'
+    cmds:
+      - |
+        docker run -d --rm \
+          --name {{.POSTGRES_CONTAINER}} \
+          --network {{.NETWORK}} \
+          -e POSTGRES_USER={{.POSTGRES_USER}} \
+          -e POSTGRES_PASSWORD={{.POSTGRES_PASSWORD}} \
+          -e POSTGRES_DB={{.POSTGRES_DB}} \
+          -v {{.PROJECT}}-pgdata:/var/lib/postgresql/data \
+          {{.POSTGRES_IMAGE}}
+      - task: db:wait
+
+  db:wait:
+    desc: Wait for Postgres to be ready
+    cmds:
+      - |
+        for i in $(seq 1 30); do
+          if docker exec {{.POSTGRES_CONTAINER}} pg_isready -U {{.POSTGRES_USER}} -d {{.POSTGRES_DB}} >/dev/null 2>&1; then
+            echo "Postgres ready"
+            exit 0
+          fi
+          sleep 1
+        done
+        echo "Postgres did not become ready in time"
+        exit 1
+
+  db:down:
+    desc: Stop and remove the Postgres container (keeps volume)
+    cmds:
+      - docker stop {{.POSTGRES_CONTAINER}} 2>/dev/null || true
+
+  db:reset:
+    desc: DESTRUCTIVE — drop the Postgres volume (wipes all data)
+    prompt: This deletes the taskhauler-pgdata volume. Continue?
+    cmds:
+      - task: db:down
+      - docker volume rm {{.PROJECT}}-pgdata 2>/dev/null || true
+
+  psql:
+    desc: Open psql against the running Postgres
+    cmds:
+      - docker exec -it {{.POSTGRES_CONTAINER}} psql -U {{.POSTGRES_USER}} -d {{.POSTGRES_DB}}
+
+  # ── Backend ─────────────────────────────────────────────────────────────────
+
+  backend:build:dev:
+    desc: Build the backend dev image (air HMR)
+    cmds:
+      - docker build --target dev -t {{.PROJECT}}-backend:dev backend/
+
+  backend:build:prod:
+    desc: Build the backend prod image (compiled binary)
+    cmds:
+      - docker build --target prod -t {{.PROJECT}}-backend:latest backend/
+
+  backend:dev:
+    desc: Run backend in HMR dev mode (air rebuilds on .go changes)
+    deps: [db:up, backend:build:dev]
+    cmds:
+      - task: backend:stop
+      - |
+        docker run -d --rm \
+          --name {{.BACKEND_CONTAINER}} \
+          --network {{.NETWORK}} \
+          -v $(pwd)/backend:/app \
+          -e DATABASE_URL=postgres://{{.POSTGRES_USER}}:{{.POSTGRES_PASSWORD}}@{{.POSTGRES_CONTAINER}}:5432/{{.POSTGRES_DB}}?sslmode=disable \
+          -e JWT_SECRET={{.JWT_SECRET}} \
+          -e ADMIN_EMAIL={{.ADMIN_EMAIL}} \
+          -e ADMIN_PASSWORD={{.ADMIN_PASSWORD}} \
+          -e CORS_ALLOWED_ORIGINS=http://{{.DOMAIN}},http://localhost:3000 \
+          {{.PROJECT}}-backend:dev
+
+  backend:prod:
+    desc: Run backend in prod mode (compiled binary)
+    deps: [db:up, backend:build:prod]
+    cmds:
+      - task: backend:stop
+      - |
+        docker run -d --rm \
+          --name {{.BACKEND_CONTAINER}} \
+          --network {{.NETWORK}} \
+          -e DATABASE_URL=postgres://{{.POSTGRES_USER}}:{{.POSTGRES_PASSWORD}}@{{.POSTGRES_CONTAINER}}:5432/{{.POSTGRES_DB}}?sslmode=disable \
+          -e JWT_SECRET={{.JWT_SECRET}} \
+          -e ADMIN_EMAIL={{.ADMIN_EMAIL}} \
+          -e ADMIN_PASSWORD={{.ADMIN_PASSWORD}} \
+          -e CORS_ALLOWED_ORIGINS=http://{{.DOMAIN}} \
+          {{.PROJECT}}-backend:latest
+
+  backend:stop:
+    cmds:
+      - docker stop {{.BACKEND_CONTAINER}} 2>/dev/null || true
+
+  backend:logs:
+    cmds:
+      - docker logs -f {{.BACKEND_CONTAINER}}
+
+  backend:shell:
+    cmds:
+      - docker exec -it {{.BACKEND_CONTAINER}} sh
+
+  # ── Frontend (app) ──────────────────────────────────────────────────────────
+
+  frontend:build:dev:
+    desc: Build the frontend dev image (vite HMR)
+    cmds:
+      - docker build --target dev -t {{.PROJECT}}-frontend:dev frontend/
+
+  frontend:build:prod:
+    desc: Build the frontend prod image (nginx + bundled assets)
+    cmds:
+      - docker build --target prod -t {{.PROJECT}}-frontend:latest frontend/
+
+  frontend:dev:
+    desc: Run frontend in HMR dev mode (vite)
+    deps: [frontend:build:dev]
+    cmds:
+      - task: frontend:stop
+      - |
+        docker run -d --rm \
+          --name {{.FRONTEND_CONTAINER}} \
+          --network {{.NETWORK}} \
+          -v $(pwd)/frontend:/app \
+          -v /app/node_modules \
+          -l docker-proxy.taskhauler-app.host={{.DOMAIN}} \
+          -l docker-proxy.taskhauler-app.port=3000 \
+          -e VITE_BACKEND_URL=http://{{.BACKEND_CONTAINER}}:8080 \
+          {{.PROJECT}}-frontend:dev
+      - task: net:attach-proxy
+
+  frontend:prod:
+    desc: Run frontend in prod mode (nginx serving built assets, proxying /api/v1 → backend)
+    deps: [frontend:build:prod]
+    cmds:
+      - task: frontend:stop
+      - |
+        docker run -d --rm \
+          --name {{.FRONTEND_CONTAINER}} \
+          --network {{.NETWORK}} \
+          -l docker-proxy.taskhauler-app.host={{.DOMAIN}} \
+          -l docker-proxy.taskhauler-app.port=80 \
+          {{.PROJECT}}-frontend:latest
+      - task: net:attach-proxy
+
+  frontend:stop:
+    cmds:
+      - docker stop {{.FRONTEND_CONTAINER}} 2>/dev/null || true
+
+  frontend:logs:
+    cmds:
+      - docker logs -f {{.FRONTEND_CONTAINER}}
+
+  # ── Website (marketing) ─────────────────────────────────────────────────────
+
+  website:build:dev:
+    desc: Build the marketing site dev image (vite HMR)
+    cmds:
+      - docker build --target dev -t {{.PROJECT}}-website:dev website/
+
+  website:build:prod:
+    desc: Build the marketing site prod image (nginx + bundled assets)
+    cmds:
+      - docker build --target prod -t {{.PROJECT}}-website:latest website/
+
+  website:dev:
+    desc: Run marketing site in HMR dev mode
+    deps: [website:build:dev]
+    cmds:
+      - task: website:stop
+      - |
+        docker run -d --rm \
+          --name {{.WEBSITE_CONTAINER}} \
+          --network {{.NETWORK}} \
+          -v $(pwd)/website:/app \
+          -v /app/node_modules \
+          -l docker-proxy.taskhauler-marketing.host={{.MARKETING_DOMAIN}} \
+          -l docker-proxy.taskhauler-marketing.port=3001 \
+          {{.PROJECT}}-website:dev
+      - task: net:attach-proxy
+
+  website:prod:
+    desc: Run marketing site in prod mode (nginx)
+    deps: [website:build:prod]
+    cmds:
+      - task: website:stop
+      - |
+        docker run -d --rm \
+          --name {{.WEBSITE_CONTAINER}} \
+          --network {{.NETWORK}} \
+          -l docker-proxy.taskhauler-marketing.host={{.MARKETING_DOMAIN}} \
+          -l docker-proxy.taskhauler-marketing.port=80 \
+          {{.PROJECT}}-website:latest
+      - task: net:attach-proxy
+
+  website:stop:
+    cmds:
+      - docker stop {{.WEBSITE_CONTAINER}} 2>/dev/null || true
+
+  website:logs:
+    cmds:
+      - docker logs -f {{.WEBSITE_CONTAINER}}
+
+  # ── Proxy attach (idempotent) ───────────────────────────────────────────────
+
+  net:attach-proxy:
+    desc: Connect ddt-proxy to {{.NETWORK}} so it can route to our containers
+    cmds:
+      - |
+        if docker ps --format '{{`{{.Names}}`}}' | grep -q '^ddt-proxy$'; then
+          docker network connect {{.NETWORK}} ddt-proxy 2>/dev/null || true
+        fi
+      - ddt proxy reload 2>/dev/null || true
+
+  # ── Bundles ─────────────────────────────────────────────────────────────────
+
+  dev:
+    desc: Start everything in HMR dev mode (postgres + backend + frontend + website)
+    cmds:
+      - task: ddt:check
+      - task: db:up
+      - task: backend:dev
+      - task: frontend:dev
+      - task: website:dev
+      - sleep 2
+      - task: urls
+
+  prod:
+    desc: Start everything in prod mode (compiled backend + nginx-served frontend/website)
+    cmds:
+      - task: ddt:check
+      - task: db:up
+      - task: backend:prod
+      - task: frontend:prod
+      - task: website:prod
+      - sleep 2
+      - task: urls
+
+  down:
+    desc: Stop all containers (keeps Postgres volume)
+    cmds:
+      - task: frontend:stop
+      - task: website:stop
+      - task: backend:stop
+      - task: db:down
+
+  urls:
+    desc: Show the URLs to open in the browser
+    cmds:
+      - |
+        echo ""
+        echo "── Taskhauler is running ──────────────────────────────────"
+        echo ""
+        echo "  App:           http://{{.DOMAIN}}"
+        echo "  Marketing:     http://{{.MARKETING_DOMAIN}}"
+        echo "  API:           http://{{.DOMAIN}}/api/v1"
+        echo "  OpenAPI spec:  http://{{.DOMAIN}}/api/v1/openapi.json"
+        echo ""
+        echo "  Login: {{.ADMIN_EMAIL}} / {{.ADMIN_PASSWORD}}"
+        echo ""
+
+  ps:
+    desc: Show all taskhauler containers
+    cmds:
+      - docker ps --filter "name={{.PROJECT}}-" --format 'table {{`{{.Names}}\t{{.Status}}\t{{.Ports}}`}}'
+
+  logs:
+    desc: Tail logs from all running taskhauler containers
+    cmds:
+      - docker logs -f $(docker ps -q --filter "name={{.PROJECT}}-") 2>&1 | sed 's/^/[logs] /'
+
+  # ── Data import (TA SQLite → taskhauler Postgres) ───────────────────────────
+
+  import:
+    desc: Import existing task data from the teamagentica SQLite DB (read-only)
+    deps: [db:up, backend:build:dev]
+    cmds:
+      - |
+        docker run --rm \
+          --network {{.NETWORK}} \
+          -v $(pwd)/backend:/app \
+          -v "{{.TA_SQLITE}}:/data/source.db:ro" \
+          -e DATABASE_URL=postgres://{{.POSTGRES_USER}}:{{.POSTGRES_PASSWORD}}@{{.POSTGRES_CONTAINER}}:5432/{{.POSTGRES_DB}}?sslmode=disable \
+          --entrypoint sh \
+          {{.PROJECT}}-backend:dev \
+          -c "go run ./cmd/import-sqlite --source /data/source.db"
+
+  import:dry-run:
+    desc: Report what would be imported, without writing
+    deps: [db:up, backend:build:dev]
+    cmds:
+      - |
+        docker run --rm \
+          --network {{.NETWORK}} \
+          -v $(pwd)/backend:/app \
+          -v "{{.TA_SQLITE}}:/data/source.db:ro" \
+          -e DATABASE_URL=postgres://{{.POSTGRES_USER}}:{{.POSTGRES_PASSWORD}}@{{.POSTGRES_CONTAINER}}:5432/{{.POSTGRES_DB}}?sslmode=disable \
+          --entrypoint sh \
+          {{.PROJECT}}-backend:dev \
+          -c "go run ./cmd/import-sqlite --source /data/source.db --dry-run"
+
+  # ── OpenAPI ─────────────────────────────────────────────────────────────────
+
+  openapi:gen:
+    desc: Generate openapi.json from Go source via go-oapifly
+    deps: [backend:build:dev]
+    cmds:
+      - |
+        docker run --rm \
+          -v $(pwd)/backend:/app \
+          --entrypoint sh \
+          {{.PROJECT}}-backend:dev \
+          -c "go run ./cmd/generate-openapi --out /app/openapi.json"
+      - echo "Wrote backend/openapi.json"
+
+  # ── Convenience ─────────────────────────────────────────────────────────────
+
+  clean:
+    desc: Stop everything and remove built images
+    cmds:
+      - task: down
+      - docker rmi {{.PROJECT}}-backend:dev {{.PROJECT}}-backend:latest 2>/dev/null || true
+      - docker rmi {{.PROJECT}}-frontend:dev {{.PROJECT}}-frontend:latest 2>/dev/null || true
+      - docker rmi {{.PROJECT}}-website:dev {{.PROJECT}}-website:latest 2>/dev/null || true
