@@ -24,7 +24,9 @@ export default defineConfig(({ mode }) => {
       port: 3000,
       allowedHosts: ['taskhauler-v2.localhost', 'localhost'],
       hmr: {
-        clientPort: 3000,
+        // Browser reaches vite through the DDT proxy on port 80, not the
+        // container-internal port 3000. WS upgrade must target the same.
+        clientPort: 80,
       },
       proxy: {
         '/api/v1': {

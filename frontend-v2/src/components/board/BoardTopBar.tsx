@@ -3,7 +3,7 @@ import { useKanbanStore } from "@/stores/kanbanStore";
 import { useBoardUIStore } from "@/stores/boardUIStore";
 import { MOCK_PRESENCE } from "@/mock/presence";
 import { MOCK_AGENTS } from "@/mock/agents";
-import { applyTheme, persistTheme, THEMES, getStoredTheme } from "@/lib/theme";
+import { applyTheme, persistTheme, getStoredTheme } from "@/lib/theme";
 import PresenceCluster from "./primitives/PresenceCluster";
 import KeyHint from "./primitives/KeyHint";
 import { useState } from "react";
@@ -176,7 +176,9 @@ function ThemeSwitcher() {
     setTheme(name);
   };
 
-  const themes = THEMES || [
+  // THEMES from @/lib/theme is just the name list (string[]); we need the
+  // swatch palette here, so define it inline.
+  const themes: { name: string; bg: string; accent: string; surface: string }[] = [
     { name: "day", bg: "#fafaf9", accent: "#5b5bd6", surface: "#ffffff" },
     { name: "mono", bg: "#0c0c0a", accent: "#facc15", surface: "#15140f" },
     { name: "paper", bg: "#f5f0e2", accent: "#9a3412", surface: "#fbf7e9" },
