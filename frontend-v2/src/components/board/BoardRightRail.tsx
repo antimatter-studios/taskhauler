@@ -16,9 +16,7 @@ import PlansRail from "./rail/PlansRail";
 export default function BoardRightRail() {
   const selectedCardId = useBoardUIStore((s) => s.selectedCardId);
   const consoleOpen = useBoardUIStore((s) => s.consoleOpen);
-  const setSelectedCardId = useBoardUIStore(
-    (s) => (s as any).setSelectedCardId
-  );
+  const setSelectedCardId = useBoardUIStore((s) => s.selectCard);
   const railTab = useBoardUIStore((s) => s.railTab) as string;
 
   if (!consoleOpen && selectedCardId == null) return null;

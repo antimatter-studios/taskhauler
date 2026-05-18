@@ -18,7 +18,7 @@ import { ViewSwitcher } from "./views/ViewSwitcher";
 export default function Board() {
   const selectedCardId = useBoardUIStore((s) => s.selectedCardId);
   const focusedCardId = useBoardUIStore((s) => s.focusedCardId);
-  const setFocusedCardId = useBoardUIStore((s) => (s as any).setFocusedCardId);
+  const setFocusedCardId = useBoardUIStore((s) => s.focusCard);
   const fetchBoards = useKanbanStore((s) => s.fetchBoards);
   const fetchBoard = useKanbanStore((s) => s.fetchBoard);
   const setActiveBoard = useKanbanStore((s) => s.setActiveBoard);

@@ -2,8 +2,10 @@ import { Columns3, GanttChart, Terminal, Network } from "lucide-react";
 import { useBoardUIStore } from "@/stores/boardUIStore";
 import type { ComponentType } from "react";
 
+// Match GroupingMode in boardUIStore — "col" (not "status") is the canonical
+// id for grouping by board column. "Status" is just the UI label.
 const GROUPINGS = [
-  { id: "status", label: "Status" },
+  { id: "col", label: "Status" },
   { id: "priority", label: "Priority" },
   { id: "epic", label: "Epic" },
   { id: "assignee", label: "Assignee" },
@@ -37,7 +39,7 @@ export default function BoardFilterRow() {
   const grouping = useBoardUIStore((s) => s.grouping) as string;
   const setGrouping = useBoardUIStore((s) => (s as any).setGrouping);
   const filterAssignee = useBoardUIStore((s) => s.filterAssignee) as string;
-  const setFilterAssignee = useBoardUIStore((s) => (s as any).setFilterAssignee);
+  const setFilterAssignee = useBoardUIStore((s) => s.setFilter);
   const view = useBoardUIStore((s) => s.view) as string;
   const setView = useBoardUIStore((s) => (s as any).setView);
 
