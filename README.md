@@ -24,6 +24,8 @@ Taskfile.yml  Orchestrator — raw `docker run` for postgres, backend, frontend,
 
 - [docs/zitadel.md](docs/zitadel.md) — planned migration from local JWT auth to a central ZITADEL-based IdP serving the whole Antimatter Studios ecosystem.
 - [docs/frontend-v2-status.md](docs/frontend-v2-status.md) — feature status + mock-data strategy for the `frontend-v2` redesign. 100% prototype-fidelity UI now; mocks get swapped for live API as endpoints land.
+- [docs/v2-gap-analysis.md](docs/v2-gap-analysis.md) — exhaustive audit against the v2 spec, implementation, and Task Hauler board. 49 new cards + 15 annotations + 4 critical bugs fixed in code.
+  Companion inventories: [spec](docs/v2-spec-inventory.md) (210 entries) / [impl](docs/v2-impl-inventory.md) (59 files) / [board](docs/v2-board-inventory.md) (148 cards).
 
 ## Quick start (local dev)
 
