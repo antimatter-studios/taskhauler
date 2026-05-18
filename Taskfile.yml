@@ -97,6 +97,8 @@ tasks:
         docker run -d --rm \
           --name {{.POSTGRES_CONTAINER}} \
           --network {{.NETWORK}} \
+          -l com.docker.compose.project={{.PROJECT}} \
+          -l com.docker.compose.service=postgres \
           -e POSTGRES_USER={{.POSTGRES_USER}} \
           -e POSTGRES_PASSWORD={{.POSTGRES_PASSWORD}} \
           -e POSTGRES_DB={{.POSTGRES_DB}} \
@@ -160,6 +162,8 @@ tasks:
           --name {{.BACKEND_V1_CONTAINER}} \
           --network {{.NETWORK}} \
           -v $(pwd)/{{.BACKEND_V1_DIR}}:/app \
+          -l com.docker.compose.project={{.PROJECT}} \
+          -l com.docker.compose.service=backend-v1 \
           -l docker-proxy.taskhauler-api-v1.host={{.DOMAIN}} \
           -l docker-proxy.taskhauler-api-v1.port=8080 \
           -l docker-proxy.taskhauler-api-v1.path=/api/v1 \
@@ -180,6 +184,8 @@ tasks:
         docker run -d --rm \
           --name {{.BACKEND_V1_CONTAINER}} \
           --network {{.NETWORK}} \
+          -l com.docker.compose.project={{.PROJECT}} \
+          -l com.docker.compose.service=backend-v1 \
           -l docker-proxy.taskhauler-api-v1.host={{.DOMAIN}} \
           -l docker-proxy.taskhauler-api-v1.port=8080 \
           -l docker-proxy.taskhauler-api-v1.path=/api/v1 \
@@ -226,6 +232,8 @@ tasks:
           --network {{.NETWORK}} \
           -v $(pwd)/frontend:/app \
           -v /app/node_modules \
+          -l com.docker.compose.project={{.PROJECT}} \
+          -l com.docker.compose.service=frontend \
           -l docker-proxy.taskhauler-app.host={{.DOMAIN}} \
           -l docker-proxy.taskhauler-app.port=3000 \
           -e VITE_BACKEND_V1_URL=http://{{.BACKEND_V1_CONTAINER}}:8080 \
@@ -241,6 +249,8 @@ tasks:
         docker run -d --rm \
           --name {{.FRONTEND_CONTAINER}} \
           --network {{.NETWORK}} \
+          -l com.docker.compose.project={{.PROJECT}} \
+          -l com.docker.compose.service=frontend \
           -l docker-proxy.taskhauler-app.host={{.DOMAIN}} \
           -l docker-proxy.taskhauler-app.port=80 \
           {{.PROJECT}}-frontend:latest
@@ -277,6 +287,8 @@ tasks:
           --network {{.NETWORK}} \
           -v $(pwd)/website:/app \
           -v /app/node_modules \
+          -l com.docker.compose.project={{.PROJECT}} \
+          -l com.docker.compose.service=website \
           -l docker-proxy.taskhauler-marketing.host={{.MARKETING_DOMAIN}} \
           -l docker-proxy.taskhauler-marketing.port=3001 \
           {{.PROJECT}}-website:dev
@@ -291,6 +303,8 @@ tasks:
         docker run -d --rm \
           --name {{.WEBSITE_CONTAINER}} \
           --network {{.NETWORK}} \
+          -l com.docker.compose.project={{.PROJECT}} \
+          -l com.docker.compose.service=website \
           -l docker-proxy.taskhauler-marketing.host={{.MARKETING_DOMAIN}} \
           -l docker-proxy.taskhauler-marketing.port=80 \
           {{.PROJECT}}-website:latest
