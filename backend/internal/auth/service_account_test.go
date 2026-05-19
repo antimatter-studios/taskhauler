@@ -124,8 +124,9 @@ func TestCreateServiceAccount_MissingName_400(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
 
-func TestCreateServiceAccount_DuplicateEmail_500(t *testing.T) {
-	// Email is unique-indexed; a duplicate Name yields the same email and should error.
+func TestCreateServiceAccount_DuplicateName_409(t *testing.T) {
+	// Duplicate-name pre-check returns a friendly 409 Conflict (was previously
+	// a 500 with the raw GORM unique-index error).
 	_, h, _ := newSATestEnv(t)
 	r := makeSAHandlerRouter(h)
 
@@ -133,8 +134,9 @@ func TestCreateServiceAccount_DuplicateEmail_500(t *testing.T) {
 	require.Equal(t, http.StatusCreated, first.Code)
 
 	dup := postJSON(t, r, "/service-accounts", CreateServiceAccountRequest{Name: "ci-bot"})
-	assert.Equal(t, http.StatusInternalServerError, dup.Code,
-		"duplicate name should fail at the unique-index check; body: %s", dup.Body.String())
+	assert.Equal(t, http.StatusConflict, dup.Code,
+		"duplicate name should return 409; body: %s", dup.Body.String())
+	assert.Contains(t, dup.Body.String(), "already exists")
 }
 
 func TestIssuedToken_AuthenticatesViaMiddleware(t *testing.T) {

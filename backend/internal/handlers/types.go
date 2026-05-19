@@ -183,12 +183,14 @@ type MCPUpdateTaskRequest struct {
 	CardID        string   `json:"card_id" binding:"required"`
 	ColumnID      *string  `json:"column_id,omitempty"`
 	EpicID        *string  `json:"epic_id,omitempty"`
+	ClearEpic     bool     `json:"clear_epic,omitempty"`
 	Title         *string  `json:"title,omitempty"`
 	Description   *string  `json:"description,omitempty"`
 	CardType      *string  `json:"card_type,omitempty"`
 	Priority      *string  `json:"priority,omitempty"`
 	AssigneeID    *uint    `json:"assignee_id,omitempty"`
 	AssigneeAgent *string  `json:"assignee_agent,omitempty"`
+	ClearAssignee bool     `json:"clear_assignee,omitempty"`
 	Labels        *string  `json:"labels,omitempty"`
 	DueDate       *int64   `json:"due_date,omitempty"`
 	ClearDue      bool     `json:"clear_due,omitempty"`
@@ -203,9 +205,8 @@ type MCPSearchTasksRequest struct {
 
 // @schema
 type MCPAddCommentRequest struct {
-	CardID   string `json:"card_id" binding:"required"`
-	Body     string `json:"body" binding:"required"`
-	AuthorID uint   `json:"author_id,omitempty"`
+	CardID string `json:"card_id" binding:"required"`
+	Body   string `json:"body" binding:"required"`
 }
 
 // ── Response envelopes ───────────────────────────────────────────────────────

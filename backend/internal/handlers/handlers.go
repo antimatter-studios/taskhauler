@@ -1379,12 +1379,17 @@ func (h *Handler) MCPUpdateEpic(c *gin.Context) {
 // @Param body body handlers.MCPDeleteEpicRequest true "Delete payload"
 // @Success 204 {object} handlers.ErrorResponse "No content"
 // @Failure 400 {object} handlers.ErrorResponse "Bad request"
+// @Failure 404 {object} handlers.ErrorResponse "Epic not found"
 // @Failure 500 {object} handlers.ErrorResponse "Server error"
 // @Router /api/v1/mcp/delete_epic [post]
 func (h *Handler) MCPDeleteEpic(c *gin.Context) {
 	var req MCPDeleteEpicRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if _, err := h.db.GetEpic(req.EpicID); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("epic %q not found", req.EpicID)})
 		return
 	}
 	if err := h.db.DeleteEpic(req.EpicID); err != nil {
@@ -1570,10 +1575,14 @@ func (h *Handler) MCPUpdateTask(c *gin.Context) {
 	oldAssigneeID := card.AssigneeID
 	oldAssigneeAgent := card.AssigneeAgent
 
+	// Field-update semantics mirror REST UpdateCard exactly so MCP callers see
+	// the same Clear-flag behaviour. See handlers.UpdateCard for the source.
 	if req.ColumnID != nil {
 		card.ColumnID = *req.ColumnID
 	}
-	if req.EpicID != nil {
+	if req.ClearEpic {
+		card.EpicID = ""
+	} else if req.EpicID != nil {
 		card.EpicID = *req.EpicID
 	}
 	if req.Title != nil {
@@ -1588,13 +1597,18 @@ func (h *Handler) MCPUpdateTask(c *gin.Context) {
 	if req.Priority != nil {
 		card.Priority = *req.Priority
 	}
-	if req.AssigneeID != nil {
-		card.AssigneeID = *req.AssigneeID
-		card.AssigneeAgent = ""
-	}
-	if req.AssigneeAgent != nil {
-		card.AssigneeAgent = *req.AssigneeAgent
+	if req.ClearAssignee {
 		card.AssigneeID = 0
+		card.AssigneeAgent = ""
+	} else {
+		if req.AssigneeID != nil {
+			card.AssigneeID = *req.AssigneeID
+			card.AssigneeAgent = ""
+		}
+		if req.AssigneeAgent != nil {
+			card.AssigneeAgent = *req.AssigneeAgent
+			card.AssigneeID = 0
+		}
 	}
 	if req.Labels != nil {
 		card.Labels = *req.Labels
@@ -1660,14 +1674,12 @@ func (h *Handler) MCPAddComment(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("card %q not found", req.CardID)})
 		return
 	}
-	authorID := req.AuthorID
-	if authorID == 0 {
-		authorID = getUserID(c)
-	}
+	// Author is always the authenticated caller — no client override (closes
+	// the MCP author-spoofing path that REST CreateComment never had).
 	comment := &storage.Comment{
 		ID:       uuid.New().String(),
 		CardID:   req.CardID,
-		AuthorID: authorID,
+		AuthorID: getUserID(c),
 		Body:     req.Body,
 	}
 	if err := h.db.CreateComment(comment); err != nil {

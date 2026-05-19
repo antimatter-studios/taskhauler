@@ -2,13 +2,23 @@ package auth
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
+	"regexp"
 	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
+
+// validServiceAccountName accepts only chars safe to embed in the derived
+// email local-part and any URL the name later appears in.
+var serviceAccountNameRe = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
+
+func validServiceAccountName(s string) bool {
+	return s != "" && serviceAccountNameRe.MatchString(s)
+}
 
 // Handler hosts gin handlers for /auth and /service-accounts.
 type Handler struct {
@@ -202,11 +212,28 @@ func (h *Handler) CreateServiceAccount(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	// Name must be a safe email-local-part — no @, whitespace, or path chars
+	// that would corrupt the derived email or any URL the name later appears in.
+	if !validServiceAccountName(req.Name) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "name must match [a-zA-Z0-9_-]+"})
+		return
+	}
 	displayName := req.DisplayName
 	if displayName == "" {
 		displayName = req.Name
 	}
 	email := req.Name + "@service.taskhauler.localhost"
+
+	// Pre-check for an existing account by derived email so we can return a
+	// friendly 409 instead of a 500 with the raw unique-constraint error.
+	var existing User
+	if err := h.DB.Where("email = ?", email).First(&existing).Error; err == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": fmt.Sprintf("service account %q already exists", req.Name)})
+		return
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
 
 	user := User{
 		Email:            email,

@@ -219,12 +219,10 @@ func TestSoftDelete(t *testing.T) {
 }
 
 func TestSearchCards(t *testing.T) {
-	// SearchCards uses ILIKE which is Postgres-only. On SQLite, ILIKE is not
-	// a recognised operator — so we can't fully verify the production query
-	// here. Instead, we verify that the production code path *runs* (returns
-	// either a result set or a SQL error) and that the raw query our handler
-	// would also issue via LIKE works on the same data on SQLite. This proves
-	// the underlying data layout supports the search semantics.
+	// SearchCards previously used Postgres-only ILIKE which broke on SQLite.
+	// The current implementation uses LOWER(...) LIKE LOWER(...) which is
+	// portable across both backends — exercise it end-to-end on SQLite and
+	// verify case-insensitive matching against title / description / labels.
 	db := newTestDB(t)
 	board := &Board{ID: uuid.New().String(), Name: "B"}
 	require.NoError(t, db.CreateBoard(board))
@@ -240,19 +238,19 @@ func TestSearchCards(t *testing.T) {
 		require.NoError(t, db.CreateCard(c))
 	}
 
-	// Run a LIKE-based search equivalent (case-sensitive) on SQLite directly.
-	var got []Card
-	pattern := "%bug%"
-	require.NoError(t, db.Raw().Where("board_id = ? AND (title LIKE ? OR description LIKE ? OR labels LIKE ?)", board.ID, pattern, pattern, pattern).Find(&got).Error)
-	assert.Len(t, got, 1, "should find one card containing 'bug'")
+	got, err := db.SearchCards(board.ID, "bug")
+	require.NoError(t, err)
+	assert.Len(t, got, 1, "title or labels contain 'bug'")
 
-	pattern = "%docs%"
-	got = nil
-	require.NoError(t, db.Raw().Where("board_id = ? AND (title LIKE ? OR description LIKE ? OR labels LIKE ?)", board.ID, pattern, pattern, pattern).Find(&got).Error)
+	got, err = db.SearchCards(board.ID, "DOCS") // case-insensitive
+	require.NoError(t, err)
 	assert.Len(t, got, 1)
 
-	pattern = "%cleanup%"
-	got = nil
-	require.NoError(t, db.Raw().Where("board_id = ? AND (title LIKE ? OR description LIKE ? OR labels LIKE ?)", board.ID, pattern, pattern, pattern).Find(&got).Error)
+	got, err = db.SearchCards(board.ID, "cleanup") // description match
+	require.NoError(t, err)
 	assert.Len(t, got, 1)
+
+	got, err = db.SearchCards(board.ID, "nothing-matches")
+	require.NoError(t, err)
+	assert.Empty(t, got)
 }

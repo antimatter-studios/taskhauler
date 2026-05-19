@@ -370,6 +370,62 @@ func TestMCP_UpdateTask_CardNotFound(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, w.Code)
 }
 
+func TestMCP_UpdateTask_ClearEpic(t *testing.T) {
+	// MCP now mirrors REST: clear_epic=true unsets epic_id (was previously
+	// unsupported on MCP — only REST had the flag).
+	e := newIntegrationEnv(t)
+	b := e.seedBoard(t, "B", "B")
+	col := e.seedColumn(t, b.ID, "Todo", 1)
+	ep := e.seedEpic(t, b.ID, "Onboarding")
+	card := e.seedCard(t, b.ID, col.ID, "T")
+	// Pre-attach the epic.
+	e.do(t, http.MethodPost, "/api/v1/mcp/update_task", map[string]interface{}{"card_id": card.ID, "epic_id": ep.ID})
+
+	w := e.do(t, http.MethodPost, "/api/v1/mcp/update_task", map[string]interface{}{
+		"card_id":    card.ID,
+		"clear_epic": true,
+	})
+	require.Equal(t, http.StatusOK, w.Code)
+	var out CardResponse
+	decodeBody(t, w, &out)
+	assert.Equal(t, "", out.EpicID)
+}
+
+func TestMCP_UpdateTask_ClearAssignee(t *testing.T) {
+	// MCP now mirrors REST: clear_assignee=true unsets both assignee_id and
+	// assignee_agent in one call.
+	e := newIntegrationEnv(t)
+	b := e.seedBoard(t, "B", "B")
+	col := e.seedColumn(t, b.ID, "Todo", 1)
+	card := e.seedCard(t, b.ID, col.ID, "T")
+	// Pre-assign an agent.
+	agent := "vega"
+	e.do(t, http.MethodPost, "/api/v1/mcp/update_task", map[string]interface{}{
+		"card_id":        card.ID,
+		"assignee_agent": agent,
+	})
+
+	w := e.do(t, http.MethodPost, "/api/v1/mcp/update_task", map[string]interface{}{
+		"card_id":        card.ID,
+		"clear_assignee": true,
+	})
+	require.Equal(t, http.StatusOK, w.Code)
+	var out CardResponse
+	decodeBody(t, w, &out)
+	assert.Equal(t, uint(0), out.AssigneeID)
+	assert.Equal(t, "", out.AssigneeAgent)
+}
+
+func TestMCP_DeleteEpic_MissingReturns404(t *testing.T) {
+	// MCP previously returned 204 unconditionally on delete-missing-id;
+	// now it pre-checks existence and returns 404 to match REST behaviour.
+	e := newIntegrationEnv(t)
+	w := e.do(t, http.MethodPost, "/api/v1/mcp/delete_epic", map[string]interface{}{
+		"epic_id": "does-not-exist",
+	})
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
 func TestMCP_SearchTasks_RequiresQuery(t *testing.T) {
 	e := newIntegrationEnv(t)
 	w := e.do(t, http.MethodPost, "/api/v1/mcp/search_tasks", map[string]interface{}{"board_id": "x"})
@@ -413,7 +469,12 @@ func TestMCP_AddComment_DefaultsAuthorToCaller(t *testing.T) {
 	assert.Contains(t, cm.AuthorName, e.admin.Email)
 }
 
-func TestMCP_AddComment_ExplicitAuthorID(t *testing.T) {
+func TestMCP_AddComment_AuthorIDFromBodyIsIgnored(t *testing.T) {
+	// Closes the MCP author-spoofing path: clients used to be able to set
+	// author_id in the body and have it persisted, even with a service-account
+	// token that's authenticated as a different user. The fix removed
+	// author_id from MCPAddCommentRequest entirely; the authenticated caller
+	// is always used.
 	e := newIntegrationEnv(t)
 	b := e.seedBoard(t, "B", "B")
 	col := e.seedColumn(t, b.ID, "Todo", 1)
@@ -421,13 +482,13 @@ func TestMCP_AddComment_ExplicitAuthorID(t *testing.T) {
 
 	w := e.do(t, http.MethodPost, "/api/v1/mcp/add_comment", map[string]interface{}{
 		"card_id":   card.ID,
-		"body":      "explicit author",
-		"author_id": 999,
+		"body":      "comment with spoofed author",
+		"author_id": 999, // ignored — request type has no such field anymore
 	})
 	require.Equal(t, http.StatusCreated, w.Code)
 	var cm CommentResponse
 	decodeBody(t, w, &cm)
-	assert.Equal(t, uint(999), cm.AuthorID, "explicit author_id should override caller")
+	assert.Equal(t, e.admin.ID, cm.AuthorID, "author must be the authenticated caller, not the request body")
 }
 
 func TestMCP_AddComment_CardNotFound(t *testing.T) {

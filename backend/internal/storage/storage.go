@@ -1,6 +1,8 @@
 package storage
 
 import (
+	"strings"
+
 	"gorm.io/gorm"
 )
 
@@ -198,9 +200,14 @@ func (d *DB) ListCards(boardID string) ([]Card, error) {
 
 func (d *DB) SearchCards(boardID, query string) ([]Card, error) {
 	var cards []Card
-	pattern := "%" + query + "%"
-	return cards, d.db.Where("board_id = ? AND (title ILIKE ? OR description ILIKE ? OR labels ILIKE ?)", boardID, pattern, pattern, pattern).
-		Order("column_id asc, position asc").Find(&cards).Error
+	// Lowercase both sides so the query is portable across Postgres (prod) and
+	// SQLite (test). ILIKE doesn't exist on SQLite, and Postgres LIKE is
+	// case-sensitive — LOWER() bridges both.
+	pattern := "%" + strings.ToLower(query) + "%"
+	return cards, d.db.Where(
+		"board_id = ? AND (LOWER(title) LIKE ? OR LOWER(description) LIKE ? OR LOWER(labels) LIKE ?)",
+		boardID, pattern, pattern, pattern,
+	).Order("column_id asc, position asc").Find(&cards).Error
 }
 
 func (d *DB) ListCardsByColumn(columnID string) ([]Card, error) {
