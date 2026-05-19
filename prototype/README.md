@@ -42,8 +42,8 @@ task prototype:prod
 
 ## Companion docs
 
-- [docs/design/README.md](../docs/design/README.md) — full design spec
-- [docs/design/PARITY_CHECKLIST.md](../docs/design/PARITY_CHECKLIST.md) — granular feature checklist
-- [docs/design/BACKEND_GAPS.md](../docs/design/BACKEND_GAPS.md) — API additions required for parity
+- [docs/v2-spec-inventory.md](../docs/v2-spec-inventory.md) — full design spec, distilled to 210 SPEC-NN entries (tokens, components, behaviors, edge cases)
+- [docs/frontend-v2-status.md](../docs/frontend-v2-status.md) — feature status + mock-data strategy + rollout plan + Phase-by-Phase parity matrix
+- [docs/screenshots/](../docs/screenshots/) — visual reference (9 captioned PNGs of the prototype)
 - [docs/v2-spec-inventory.md](../docs/v2-spec-inventory.md) — 210 SPEC-NN entries distilled from the design docs
 - [docs/v2-gap-analysis.md](../docs/v2-gap-analysis.md) — audit comparing spec to live implementation

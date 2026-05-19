@@ -1,12 +1,13 @@
 # Frontend v2 — feature status & backend gap tracker
 
-This doc tracks every feature in the [v2 design handoff](../frontend-v2-src/) and how it gets implemented against the current `/api/v1` surface vs. eventually-needed backend additions.
+This doc tracks every feature in the v2 design and how it gets implemented against the current `/api/v1` surface vs. eventually-needed backend additions.
 
-Companion docs (read order):
-1. [frontend-v2-src/README.md](../frontend-v2-src/README.md) — full design spec
-2. [frontend-v2-src/PARITY_CHECKLIST.md](../frontend-v2-src/PARITY_CHECKLIST.md) — granular feature checklist (8 phases)
-3. [frontend-v2-src/BACKEND_GAPS.md](../frontend-v2-src/BACKEND_GAPS.md) — original list of backend additions
-4. **This doc** — running status: what's wired to real data vs. backed by mock data
+Companion docs:
+1. [v2-spec-inventory.md](./v2-spec-inventory.md) — 210 SPEC-NN entries (tokens, components, behaviors, edge cases — distilled from the original design spec)
+2. [v2-board-inventory.md](./v2-board-inventory.md) + [v2-board-coverage-map.md](./v2-board-coverage-map.md) — TH-card state, SPEC→card mapping
+3. [v2-gap-analysis.md](./v2-gap-analysis.md) — audit of spec vs. implementation vs. board
+4. [v2-impl-inventory.md](./v2-impl-inventory.md) — implementation inventory of the frontend
+5. [screenshots/](./screenshots/) — visual reference (9 captioned PNGs from the prototype)
 
 ---
 
@@ -37,7 +38,7 @@ This is a deliberate separation: **ship the design now, fill in the live data ov
 
 ## Current `/api/v1` surface (what's real today)
 
-What the backend supplies right now (`backend-v1/openapi.json`):
+What the backend supplies right now (`backend/openapi.json`):
 
 | Resource | Operations |
 |---|---|
@@ -66,7 +67,7 @@ What's **not** in the API today (so anything depending on these will start out �
 
 ## Mock-data strategy
 
-All hardcoded mock data lives under `frontend-v2/src/mock/` so it's easy to:
+All hardcoded mock data lives under `frontend/src/mock/` so it's easy to:
 - See at a glance what's mocked
 - Swap to real API calls per file as endpoints land
 - Vary the fixtures (different agents, different load levels, etc.) for design QA
@@ -74,7 +75,7 @@ All hardcoded mock data lives under `frontend-v2/src/mock/` so it's easy to:
 Suggested file layout:
 
 ```
-frontend-v2/src/mock/
+frontend/src/mock/
 ├── README.md           — why each file exists and what API will replace it
 ├── users.ts            — 5–8 fake humans with hues, emails, display names
 ├── agents.ts           — 4–6 fake agents (names, plugins, descriptions)
@@ -95,7 +96,7 @@ This is the **only** code that needs to be deleted/swapped during the v1→v2 tr
 
 ## Feature matrix — by Phase
 
-Phases mirror [PARITY_CHECKLIST.md](../frontend-v2-src/PARITY_CHECKLIST.md). Items collapsed; check the checklist for full granularity.
+Phases mirror the design's 8-phase build order. Items collapsed; see [v2-spec-inventory.md](./v2-spec-inventory.md) for full per-feature spec granularity and [v2-board-coverage-map.md](./v2-board-coverage-map.md) for the SPEC→TH-card mapping.
 
 ### Phase 0 — Foundations
 
@@ -185,6 +186,8 @@ Phases mirror [PARITY_CHECKLIST.md](../frontend-v2-src/PARITY_CHECKLIST.md). Ite
 
 Each item below would convert 🎭 entries to ✅. Ordered by **impact per effort**, easiest+biggest-payoff first.
 
+> **Alternative ordering — UX-wins first.** If you'd rather sequence by user-visible payoff instead of cheapest-first, the design-doc ordering is: (1) Agent telemetry endpoint + transcript — biggest piece, depends on agent runtime; (2) Presence WebSocket — new infra; (3) Activity feed endpoint — likely reuses existing audit log; (4) Proposals domain — new table + endpoints + transactional execute; (5) Subtasks domain — simple CRUD; (6) Card schema extensions — `estimate`, `progress`, `blocked_by`; (7) AI suggestions — depends on an LLM call, could mock for v1; (8) Agent description field — trivial. Items 1–3 are the biggest UX wins; item 4 is the most novel feature; items 5–8 are smaller.
+
 ### 1. `GET /api/v1/users` — list users (smallest)
 
 **Converts:** `MOCK_USERS` → real users.
@@ -248,8 +251,8 @@ GET /api/v1/agents
 ```
 
 Open design question: where does the agent registry live?
-- (a) Backend-v1 owns it (add an `agents` table + admin CRUD)
-- (b) Agent runtime registers itself with backend-v1 via `POST /api/v1/agents`
+- (a) Backend owns it (add an `agents` table + admin CRUD)
+- (b) Agent runtime registers itself with backend via `POST /api/v1/agents`
 - (c) Federate from teamagentica's existing agent registry
 
 Decision needed.
@@ -258,7 +261,7 @@ Decision needed.
 
 **Converts:** `MOCK_ACTIVITY` → real feed. Card detail's "Agent activity" section becomes real.
 
-**Shape:** see [BACKEND_GAPS.md §3](../frontend-v2-src/BACKEND_GAPS.md).
+**Shape:** see [v2-spec-inventory.md](./v2-spec-inventory.md) SPEC-032–035 for the event shape + endpoint contract.
 
 Add an `activity_events` table, emit on mutations, expose read endpoint. ~1 day.
 
@@ -274,7 +277,7 @@ Requires the agent runtime to emit telemetry events. The endpoint is easy; the r
 
 Most novel feature of the v2 design. New domain, new endpoints, transactional execution of plans. Multi-day work.
 
-Shape: see [BACKEND_GAPS.md §4](../frontend-v2-src/BACKEND_GAPS.md).
+Shape: see [v2-spec-inventory.md](./v2-spec-inventory.md) SPEC-044–048 for the proposal/action shape + execute transaction contract.
 
 ### 9. Presence (WebSocket or SSE)
 
@@ -287,6 +290,37 @@ Requires new infrastructure (WebSocket server, scope-by-board channel, TTL on en
 **Converts:** mock suggestion in strip / card detail → real.
 
 Depends on an LLM call. Lowest priority because the strip can be hidden if no entries; but with mocks shown, the user sees the design even before this is wired.
+
+---
+
+## Rollout: ship in two waves
+
+The redesign splits cleanly into two shippable PRs — a complete UX upgrade with **zero backend dependency**, and the live/multiplayer layer that depends on the backend additions above.
+
+### PR 1 — frontend-only redesign (no backend changes)
+
+If you implement only the frontend + add localStorage persistence, you can ship:
+
+- All 4 views (Kanban / Timeline / Terminal / Dispatch) wired to the existing API — they all use existing card data
+- All 3 themes (Day / Mono / Paper), switching live and persisting
+- Card detail panel (using existing API)
+- Focus modal (with subtasks stored locally or as markdown in the description)
+- Drag-drop card reordering / reassignment across columns / lanes / sections — uses existing card mutations
+- Stub the rail tabs (Console / Activity / Plans) with "Coming soon" or mocked data
+
+This is a complete UX redesign with no backend dependency — a great first PR that gets the new design in front of users fast.
+
+### PR 2 — live & multiplayer features (depends on backend)
+
+Comes in a second wave once the backend additions land:
+
+- Console rail with real agent telemetry
+- Activity rail with real event stream
+- Plans rail with real proposals queue
+- Presence avatars on cards + top bar (WebSocket-driven)
+- AI suggestions strip with real suggestions
+
+See [Backend gaps catalog](#backend-gaps-catalog-priority-order) above for the API work PR 2 depends on.
 
 ---
 
@@ -310,6 +344,22 @@ The v1 milestone is complete when:
 At that point, a user comparing v2 against the prototype `index.html` should see **no missing UI**. The only thing the user can't yet do is have agent telemetry / presence / activity be live.
 
 Every backend addition above converts a 🎭 to ✅ in this doc and replaces an `import` from `src/mock/` with a real API call. The UI doesn't change.
+
+---
+
+## Out of scope for first pass
+
+Things in the prototype that are **not required for parity** — file them as v2 tickets after first ship:
+
+- The "AI suggestions" inline strip (can be empty/hidden initially)
+- Search / Jump to (placeholder only)
+- New Issue dialog (link to the existing creation flow is fine)
+- Saved Views (placeholder)
+- Inbox / My Issues nav (placeholder)
+- Keyboard shortcuts beyond `F` + `Esc`
+- Animations beyond presence pulse + fade-in
+
+Each of these is mentioned piecemeal in individual rows above as "mocked" or "placeholder"; this section is the deliberate "we know these are deferred" disposition.
 
 ---
 

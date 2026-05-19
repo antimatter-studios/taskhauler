@@ -1,6 +1,6 @@
 # Frontend v2 — Gap Analysis & Audit Findings
 
-> **Generated:** May 2026 against the version of frontend-v2 at commit `6879de1` (audit fixes), backend-v1 at the same head, and the Task Hauler board state with **148 cards** (up from 99 at start of audit).
+> **Generated:** May 2026 against the version of frontend at commit `6879de1` (audit fixes), backend at the same head, and the Task Hauler board state with **148 cards** (up from 99 at start of audit).
 >
 > **Purpose:** Reconcile what the v2 spec demands, what the v2 implementation actually delivers, and what the Task Hauler board tracks. Find every gap, drift, and decision-pending item. Convert findings into cards on the board so nothing is lost.
 
@@ -33,9 +33,9 @@ Companion inventory documents (all in this directory):
 
 ## Method
 
-1. **Spec analyst** (parallel agent) read every line of `frontend-v2-src/{README,PARITY_CHECKLIST,BACKEND_GAPS,SCREENSHOTS,INDEX}.md` + all 5 prototype JSX files and produced **210 SPEC-NN entries** with category, description, acceptance criteria, dependencies, line refs.
+1. **Spec analyst** (parallel agent) read every line of the original design handoff (README, PARITY_CHECKLIST, BACKEND_GAPS, SCREENSHOTS, INDEX) + all 5 prototype JSX files and produced **210 SPEC-NN entries** with category, description, acceptance criteria, dependencies, line refs. (The handoff has since been distilled into [v2-spec-inventory.md](./v2-spec-inventory.md), [frontend-v2-status.md](./frontend-v2-status.md), and [screenshots/](./screenshots/) — the original `docs/design/` folder was removed.)
 
-2. **Implementation analyst** (parallel agent) read every file in `frontend-v2/src/` + `index.html` (59 files) and produced an inventory with what each file implements, what's hardcoded/mock, what looks incomplete or wrong. Ran `npm run build`, grepped for TODO/FIXME/as any/console/alert.
+2. **Implementation analyst** (parallel agent) read every file in `frontend/src/` + `index.html` (59 files) and produced an inventory with what each file implements, what's hardcoded/mock, what looks incomplete or wrong. Ran `npm run build`, grepped for TODO/FIXME/as any/console/alert.
 
 3. **Board analyst** (parallel agent) fetched all 99 cards via the API plus their comments, grouped them by epic, produced a flat grep map of "what each card claims to track."
 
@@ -231,7 +231,7 @@ This is the "trust budget" — when future work touches these areas, you can rea
 ## Anchors (per board)
 
 - Board: `Task Hauler` (id `aa4c87b6-bde7-4394-9db5-f59325e3aca0`), prefix `TH`
-- Open at: http://taskhauler-v2.localhost (then pick "Task Hauler" from the sidebar)
+- Open at: http://taskhauler.localhost (then pick "Task Hauler" from the sidebar)
 - 17 epics: Platform / Backend / Frontend v1 / 8× v2 phases / Backend gaps / Auth / Marketing / Integrations / Audit bugs / Decisions
 - 148 cards as of audit completion
 - 4 columns: Backlog (60), In Progress (8), Review (0), Done (80)
