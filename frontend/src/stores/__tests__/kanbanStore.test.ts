@@ -74,21 +74,21 @@ beforeEach(() => {
     epics: [],
     cards: [],
     activeBoardId: null,
-    loading: true,
+    loading: false,
     error: null,
   })
   for (const key of Object.keys(tasks)) tasks[key].mockReset()
 })
 
 describe('kanbanStore initial state', () => {
-  it('starts with empty collections and loading=true', () => {
+  it('starts idle (loading=false) with empty collections', () => {
     const s = useKanbanStore.getState()
     expect(s.boards).toEqual([])
     expect(s.columns).toEqual([])
     expect(s.epics).toEqual([])
     expect(s.cards).toEqual([])
     expect(s.activeBoardId).toBeNull()
-    expect(s.loading).toBe(true)
+    expect(s.loading).toBe(false)
     expect(s.error).toBeNull()
   })
 })
@@ -101,6 +101,21 @@ describe('kanbanStore boards', () => {
     expect(result).toEqual(boards)
     expect(useKanbanStore.getState().boards).toEqual(boards)
     expect(useKanbanStore.getState().loading).toBe(false)
+  })
+
+  it('fetchBoards rejected: clears loading and writes error (no longer stuck loading=true forever)', async () => {
+    tasks.listBoards.mockRejectedValue(new Error('boom'))
+    await expect(useKanbanStore.getState().fetchBoards()).rejects.toThrow('boom')
+    const s = useKanbanStore.getState()
+    expect(s.loading).toBe(false)
+    expect(s.error).toBe('boom')
+  })
+
+  it('fetchBoards clears a stale error on success', async () => {
+    useKanbanStore.setState({ error: 'stale failure' })
+    tasks.listBoards.mockResolvedValue([mkBoard('b1')])
+    await useKanbanStore.getState().fetchBoards()
+    expect(useKanbanStore.getState().error).toBeNull()
   })
 
   it('createBoard appends to boards', async () => {
@@ -144,6 +159,27 @@ describe('kanbanStore fetchBoard', () => {
     const s = useKanbanStore.getState()
     expect(s.epics).toEqual([])
     expect(s.columns).toHaveLength(1)
+  })
+
+  it('toggles loading on/off across the call and clears error on success', async () => {
+    useKanbanStore.setState({ error: 'previous failure' })
+    tasks.listColumns.mockResolvedValue([])
+    tasks.listEpics.mockResolvedValue([])
+    tasks.listCards.mockResolvedValue([])
+    await useKanbanStore.getState().fetchBoard('b1')
+    const s = useKanbanStore.getState()
+    expect(s.loading).toBe(false)
+    expect(s.error).toBeNull()
+  })
+
+  it('rejected: clears loading and writes error (no longer stuck loading=true forever)', async () => {
+    tasks.listColumns.mockRejectedValue(new Error('boom'))
+    tasks.listEpics.mockResolvedValue([])
+    tasks.listCards.mockResolvedValue([])
+    await expect(useKanbanStore.getState().fetchBoard('b1')).rejects.toThrow('boom')
+    const s = useKanbanStore.getState()
+    expect(s.loading).toBe(false)
+    expect(s.error).toBe('boom')
   })
 })
 

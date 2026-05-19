@@ -18,11 +18,14 @@ export const useUserStore = create<UserStore>((set) => ({
   error: null,
 
   fetch: async () => {
+    set({ loading: true });
     try {
       const users = await apiClient.users.listUsers();
-      set({ users, error: null });
+      set({ users, error: null, loading: false });
     } catch {
-      set({ users: [], error: null });
+      // 404/501 from a not-yet-implemented endpoint isn't an error path the UI
+      // surfaces — fall back to an empty list silently.
+      set({ users: [], error: null, loading: false });
     }
   },
 }));

@@ -51,13 +51,24 @@ export const useKanbanStore = create<KanbanStore>((set) => ({
   epics: [],
   cards: [],
   activeBoardId: null,
-  loading: true,
+  // Idle by default — flipped on by fetchBoards/fetchBoard and back off in
+  // their finally branches. Previously initialised to true, which left every
+  // fresh consumer in a loading state until a fetch dispatched.
+  loading: false,
   error: null,
 
   fetchBoards: async () => {
-    const boards = await apiClient.tasks.listBoards();
-    set({ boards, loading: false });
-    return boards;
+    set({ loading: true, error: null });
+    try {
+      const boards = await apiClient.tasks.listBoards();
+      set({ boards, error: null });
+      return boards;
+    } catch (err) {
+      set({ error: err instanceof Error ? err.message : "failed to load boards" });
+      throw err;
+    } finally {
+      set({ loading: false });
+    }
   },
 
   createBoard: async (req) => {
@@ -75,12 +86,20 @@ export const useKanbanStore = create<KanbanStore>((set) => ({
   setActiveBoard: (id) => set({ activeBoardId: id }),
 
   fetchBoard: async (boardId) => {
-    const [columns, epics, cards] = await Promise.all([
-      apiClient.tasks.listColumns(boardId),
-      apiClient.tasks.listEpics(boardId).catch(() => [] as Epic[]),
-      apiClient.tasks.listCards(boardId),
-    ]);
-    set({ columns, epics, cards });
+    set({ loading: true, error: null });
+    try {
+      const [columns, epics, cards] = await Promise.all([
+        apiClient.tasks.listColumns(boardId),
+        apiClient.tasks.listEpics(boardId).catch(() => [] as Epic[]),
+        apiClient.tasks.listCards(boardId),
+      ]);
+      set({ columns, epics, cards, error: null });
+    } catch (err) {
+      set({ error: err instanceof Error ? err.message : "failed to load board" });
+      throw err;
+    } finally {
+      set({ loading: false });
+    }
   },
 
   createColumn: async (boardId, req) => {

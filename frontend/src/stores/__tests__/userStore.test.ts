@@ -56,4 +56,16 @@ describe('userStore', () => {
     await useUserStore.getState().fetch()
     expect(useUserStore.getState().users).toEqual([])
   })
+
+  it('fetch() toggles loading off when the call resolves', async () => {
+    listUsersMock.mockResolvedValue([])
+    await useUserStore.getState().fetch()
+    expect(useUserStore.getState().loading).toBe(false)
+  })
+
+  it('fetch() toggles loading off even when the call rejects', async () => {
+    listUsersMock.mockRejectedValue(new Error('404'))
+    await useUserStore.getState().fetch()
+    expect(useUserStore.getState().loading).toBe(false)
+  })
 })
