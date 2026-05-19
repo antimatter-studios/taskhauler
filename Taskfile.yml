@@ -12,8 +12,8 @@ version: '3'
 #   task dev                  # HMR everything
 #
 # Then open:
-#   http://taskhauler.localhost            (app)
-#   http://marketing.taskhauler.localhost  (marketing site)
+#   http://taskhauler.localhost              (app)
+#   http://www-v2.taskhauler.localhost       (marketing site)
 
 vars:
   PROJECT: taskhauler
@@ -31,10 +31,10 @@ vars:
   BACKEND_V1_IMAGE: taskhauler-backend-v1
   FRONTEND_CONTAINER: taskhauler-frontend
   FRONTEND_V2_CONTAINER: taskhauler-frontend-v2
-  WEBSITE_CONTAINER: taskhauler-website
+  WEBSITE_V2_CONTAINER: taskhauler-website-v2
   DOMAIN: taskhauler.localhost
   DOMAIN_V2: taskhauler-v2.localhost
-  MARKETING_DOMAIN: marketing.taskhauler.localhost
+  MARKETING_DOMAIN_V2: www-v2.taskhauler.localhost
   # Source TA SQLite DBs (read-only) for one-shot import
   TA_SQLITE: /Volumes/sdcard256gb/projects/agentplatform/teamagentica/data/storage-disk/storage-root/private/tool-task-tracker/tasks.db
   TA_USERS_SQLITE: /Volumes/sdcard256gb/projects/agentplatform/teamagentica/data/storage-disk/storage-root/private/system-user-manager/users.db
@@ -77,7 +77,7 @@ tasks:
     desc: Create the shared docker network
     cmds:
       - docker network inspect {{.NETWORK}} >/dev/null 2>&1 || docker network create {{.NETWORK}}
-      # Connect the DDT proxy to our network so it can reach the frontend/website containers
+      # Connect the DDT proxy to our network so it can reach the frontend / website-v2 containers
       - |
         if docker ps --format '{{`{{.Names}}`}}' | grep -q '^ddt-proxy$'; then
           docker network connect {{.NETWORK}} ddt-proxy 2>/dev/null || true
@@ -324,57 +324,57 @@ tasks:
 
   # ── Website (marketing) ─────────────────────────────────────────────────────
 
-  website:build:dev:
-    desc: Build the marketing site dev image (vite HMR)
+  website:v2:build:dev:
+    desc: Build the website-v2 dev image (vite HMR)
     cmds:
-      - docker build --target dev -t {{.PROJECT}}-website:dev website/
+      - docker build --target dev -t {{.PROJECT}}-website-v2:dev website-v2/
 
-  website:build:prod:
-    desc: Build the marketing site prod image (nginx + bundled assets)
+  website:v2:build:prod:
+    desc: Build the website-v2 prod image (nginx + bundled assets)
     cmds:
-      - docker build --target prod -t {{.PROJECT}}-website:latest website/
+      - docker build --target prod -t {{.PROJECT}}-website-v2:latest website-v2/
 
-  website:dev:
-    desc: Run marketing site in HMR dev mode
-    deps: [website:build:dev]
+  website:v2:dev:
+    desc: Run website-v2 in HMR dev mode
+    deps: [website:v2:build:dev]
     cmds:
-      - task: website:stop
+      - task: website:v2:stop
       - |
         docker run -d --rm \
-          --name {{.WEBSITE_CONTAINER}} \
+          --name {{.WEBSITE_V2_CONTAINER}} \
           --network {{.NETWORK}} \
-          -v $(pwd)/website:/app \
+          -v $(pwd)/website-v2:/app \
           -v /app/node_modules \
           -l com.docker.compose.project={{.PROJECT}} \
-          -l com.docker.compose.service=website \
-          -l docker-proxy.taskhauler-marketing.host={{.MARKETING_DOMAIN}} \
-          -l docker-proxy.taskhauler-marketing.port=3001 \
-          {{.PROJECT}}-website:dev
+          -l com.docker.compose.service=website-v2 \
+          -l docker-proxy.taskhauler-marketing-v2.host={{.MARKETING_DOMAIN_V2}} \
+          -l docker-proxy.taskhauler-marketing-v2.port=3002 \
+          {{.PROJECT}}-website-v2:dev
       - task: net:attach-proxy
 
-  website:prod:
-    desc: Run marketing site in prod mode (nginx)
-    deps: [website:build:prod]
+  website:v2:prod:
+    desc: Run website-v2 in prod mode (nginx)
+    deps: [website:v2:build:prod]
     cmds:
-      - task: website:stop
+      - task: website:v2:stop
       - |
         docker run -d --rm \
-          --name {{.WEBSITE_CONTAINER}} \
+          --name {{.WEBSITE_V2_CONTAINER}} \
           --network {{.NETWORK}} \
           -l com.docker.compose.project={{.PROJECT}} \
-          -l com.docker.compose.service=website \
-          -l docker-proxy.taskhauler-marketing.host={{.MARKETING_DOMAIN}} \
-          -l docker-proxy.taskhauler-marketing.port=80 \
-          {{.PROJECT}}-website:latest
+          -l com.docker.compose.service=website-v2 \
+          -l docker-proxy.taskhauler-marketing-v2.host={{.MARKETING_DOMAIN_V2}} \
+          -l docker-proxy.taskhauler-marketing-v2.port=80 \
+          {{.PROJECT}}-website-v2:latest
       - task: net:attach-proxy
 
-  website:stop:
+  website:v2:stop:
     cmds:
-      - docker stop {{.WEBSITE_CONTAINER}} 2>/dev/null || true
+      - docker stop {{.WEBSITE_V2_CONTAINER}} 2>/dev/null || true
 
-  website:logs:
+  website:v2:logs:
     cmds:
-      - docker logs -f {{.WEBSITE_CONTAINER}}
+      - docker logs -f {{.WEBSITE_V2_CONTAINER}}
 
   # ── Proxy attach (idempotent) ───────────────────────────────────────────────
 
@@ -390,26 +390,26 @@ tasks:
   # ── Bundles ─────────────────────────────────────────────────────────────────
 
   dev:
-    desc: Start everything in HMR dev mode (postgres + backend-v1 + frontend + frontend-v2 + website)
+    desc: Start everything in HMR dev mode (postgres + backend-v1 + frontend + frontend-v2 + website-v2)
     cmds:
       - task: ddt:check
       - task: db:up
       - task: backend:v1:dev
       - task: frontend:dev
       - task: frontend:v2:dev
-      - task: website:dev
+      - task: website:v2:dev
       - sleep 2
       - task: urls
 
   prod:
-    desc: Start everything in prod mode (compiled backend-v1 + nginx-served frontend/v2/website)
+    desc: Start everything in prod mode (compiled backend-v1 + nginx-served frontend/v2/website-v2)
     cmds:
       - task: ddt:check
       - task: db:up
       - task: backend:v1:prod
       - task: frontend:prod
       - task: frontend:v2:prod
-      - task: website:prod
+      - task: website:v2:prod
       - sleep 2
       - task: urls
 
@@ -418,7 +418,7 @@ tasks:
     cmds:
       - task: frontend:stop
       - task: frontend:v2:stop
-      - task: website:stop
+      - task: website:v2:stop
       - task: backend:v1:stop
       - task: db:down
 
@@ -431,7 +431,7 @@ tasks:
         echo ""
         echo "  App (v1):      http://{{.DOMAIN}}"
         echo "  App (v2):      http://{{.DOMAIN_V2}}"
-        echo "  Marketing:     http://{{.MARKETING_DOMAIN}}"
+        echo "  Marketing:     http://{{.MARKETING_DOMAIN_V2}}"
         echo "  API:           http://{{.DOMAIN}}/api/v1"
         echo "  OpenAPI spec:  http://{{.DOMAIN}}/api/v1/openapi.json"
         echo ""
@@ -534,4 +534,4 @@ tasks:
       - task: down
       - docker rmi {{.BACKEND_V1_IMAGE}}:dev {{.BACKEND_V1_IMAGE}}:latest 2>/dev/null || true
       - docker rmi {{.PROJECT}}-frontend:dev {{.PROJECT}}-frontend:latest 2>/dev/null || true
-      - docker rmi {{.PROJECT}}-website:dev {{.PROJECT}}-website:latest 2>/dev/null || true
+      - docker rmi {{.PROJECT}}-website-v2:dev {{.PROJECT}}-website-v2:latest 2>/dev/null || true
