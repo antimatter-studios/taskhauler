@@ -410,7 +410,7 @@ func TestRequireAdmin_NonAdminUser_403(t *testing.T) {
 	m := NewMiddleware(db, issuer)
 	r := makeAdminRouter(m)
 
-	nonAdmin := &User{ID: 7, Email: "joe@example.com", IsAdmin: false}
+	nonAdmin := createUser(t, db, "joe@example.com", false, false)
 	tok, err := issuer.IssueAccess(nonAdmin)
 	require.NoError(t, err)
 
@@ -429,7 +429,8 @@ func TestRequireAdmin_AdminUser_200(t *testing.T) {
 	m := NewMiddleware(db, issuer)
 	r := makeAdminRouter(m)
 
-	tok, err := issuer.IssueAccess(testUser()) // testUser is admin
+	admin := createUser(t, db, "alice@example.com", true, false)
+	tok, err := issuer.IssueAccess(admin)
 	require.NoError(t, err)
 
 	req := httptest.NewRequest(http.MethodGet, "/admin-only", nil)
@@ -438,6 +439,54 @@ func TestRequireAdmin_AdminUser_200(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
+}
+
+func TestRequireAdmin_DemotedAdmin_LiveDBCheckRejects(t *testing.T) {
+	// Regression: previously RequireAdmin trusted the is_admin JWT claim, so a
+	// user demoted from admin between token-issue and token-use kept admin
+	// rights until the token expired (1h). RequireAdmin now re-reads is_admin
+	// from the DB and rejects with 403 even though the claim still says true.
+	db := newAuthTestDB(t)
+	issuer := NewIssuer(testSecret)
+	m := NewMiddleware(db, issuer)
+	r := makeAdminRouter(m)
+
+	user := createUser(t, db, "ex-admin@example.com", true, false)
+	tok, err := issuer.IssueAccess(user) // claim is_admin=true
+	require.NoError(t, err)
+
+	// Demote in the DB after the token was issued.
+	require.NoError(t, db.Model(&User{}).Where("id = ?", user.ID).Update("is_admin", false).Error)
+
+	req := httptest.NewRequest(http.MethodGet, "/admin-only", nil)
+	req.Header.Set("Authorization", "Bearer "+tok)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusForbidden, w.Code,
+		"demoted admin must be rejected even with a still-valid admin JWT claim")
+}
+
+func TestRequireAdmin_DeletedUser_403(t *testing.T) {
+	// If the user is deleted between token-issue and token-use, RequireAdmin
+	// fails the DB lookup and returns 403 (not 500).
+	db := newAuthTestDB(t)
+	issuer := NewIssuer(testSecret)
+	m := NewMiddleware(db, issuer)
+	r := makeAdminRouter(m)
+
+	user := createUser(t, db, "deleted@example.com", true, false)
+	tok, err := issuer.IssueAccess(user)
+	require.NoError(t, err)
+
+	require.NoError(t, db.Delete(&User{}, user.ID).Error)
+
+	req := httptest.NewRequest(http.MethodGet, "/admin-only", nil)
+	req.Header.Set("Authorization", "Bearer "+tok)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusForbidden, w.Code)
 }
 
 func TestRequireAdmin_NoAuthCalled_403(t *testing.T) {

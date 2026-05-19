@@ -73,13 +73,38 @@ func (m *Middleware) RequireAuth() gin.HandlerFunc {
 }
 
 // RequireAdmin must be chained AFTER RequireAuth.
+//
+// Reads is_admin from the live User row, not the JWT claim. Without this, a
+// user demoted from admin between token-issue and token-use would keep admin
+// rights for the remainder of the token's 1h TTL. Service-account tokens
+// already verify is_admin live in lookupServiceToken; this closes the
+// asymmetry for JWT-authenticated callers. The extra DB read only fires on
+// admin-gated routes, which are rare.
 func (m *Middleware) RequireAdmin() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		isAdmin, _ := c.Get("is_admin")
-		if b, ok := isAdmin.(bool); !ok || !b {
+		raw, ok := c.Get("user_id")
+		if !ok {
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "admin required"})
 			return
 		}
+		uid, ok := raw.(uint)
+		if !ok {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "admin required"})
+			return
+		}
+		var user User
+		if err := m.DB.First(&user, "id = ?", uid).Error; err != nil {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "admin required"})
+			return
+		}
+		if !user.IsAdmin {
+			// Update the gin context so downstream handlers see the live value
+			// rather than the (possibly stale) JWT claim.
+			c.Set("is_admin", false)
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "admin required"})
+			return
+		}
+		c.Set("is_admin", true)
 		c.Next()
 	}
 }
