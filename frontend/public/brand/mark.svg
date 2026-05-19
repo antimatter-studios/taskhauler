@@ -1,0 +1,14 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <title>Taskhauler — mark</title>
+  
+  <g fill="currentColor">
+    <rect x="3" y="11" width="16" height="16" rx="2.5" opacity="0.4"></rect>
+    <rect x="7.5" y="7" width="16" height="16" rx="2.5" opacity="0.7"></rect>
+    <rect x="12" y="3" width="16" height="16" rx="2.5"></rect>
+  </g>
+  <g fill="rgba(255,255,255,0.65)">
+    <rect x="15" y="7.5" width="9" height="1.25" rx="0.5"></rect>
+    <rect x="15" y="10.5" width="6" height="1" rx="0.5"></rect>
+    <rect x="15" y="13.5" width="4" height="1" rx="0.5"></rect>
+  </g>
+</svg>

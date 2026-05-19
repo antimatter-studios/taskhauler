@@ -36,21 +36,24 @@ export default function LoginForm() {
           boxShadow: "var(--shadow-rest)",
         }}
       >
-        <div className="mb-4">
-          <div
-            style={{
-              fontSize: 20,
-              fontWeight: 600,
-              letterSpacing: -0.3,
-              color: "var(--text)",
-            }}
-          >
-            Taskhauler
-          </div>
-          <div
-            style={{ fontSize: 12, color: "var(--text-2)", marginTop: 2 }}
-          >
-            Sign in to your account
+        <div className="mb-4 flex items-center gap-3">
+          <img src="/brand/icon.svg" alt="" width={36} height={36} />
+          <div>
+            <div
+              style={{
+                fontSize: 20,
+                fontWeight: 600,
+                letterSpacing: -0.3,
+                color: "var(--text)",
+              }}
+            >
+              Taskhauler
+            </div>
+            <div
+              style={{ fontSize: 12, color: "var(--text-2)", marginTop: 2 }}
+            >
+              Sign in to your account
+            </div>
           </div>
         </div>
 

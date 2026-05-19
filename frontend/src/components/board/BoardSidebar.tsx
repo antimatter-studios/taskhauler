@@ -41,20 +41,13 @@ export default function BoardSidebar() {
         className="flex items-center gap-2 rounded text-left hover:opacity-90"
         style={{ padding: "2px 4px" }}
       >
-        <span
-          className="flex items-center justify-center font-extrabold"
-          style={{
-            width: 22,
-            height: 22,
-            borderRadius: 5,
-            background: "linear-gradient(135deg, var(--accent), #7c3aed)",
-            color: "#fff",
-            fontSize: 12,
-            fontFamily: "var(--mono)",
-          }}
-        >
-          T
-        </span>
+        <img
+          src="/brand/icon.svg"
+          alt="Taskhauler"
+          width={22}
+          height={22}
+          style={{ display: "block" }}
+        />
         <span style={{ fontWeight: 700, fontSize: 13, letterSpacing: -0.2 }}>
           Taskhauler
         </span>
