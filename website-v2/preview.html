@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Taskhauler — preview</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="./public/brand/icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: {
+        sans: ['Inter','system-ui','sans-serif'],
+        serif: ['"Instrument Serif"','Georgia','serif'],
+        mono: ['"JetBrains Mono"','"Geist Mono"','ui-monospace','monospace'],
+      },
+      colors: {
+        ink: { 950:'#08080b', 900:'#0c0c11', 800:'#15151c', 700:'#1e1e28', 600:'#2a2a36', 500:'#3b3b4a', 400:'#5a5a6c', 300:'#8a8aa0', 200:'#b8b8c8', 100:'#dcdcea' },
+        cream: { 50:'#fafaf9', 100:'#f5f5f0', 200:'#ebe9e1' },
+        accent: { DEFAULT:'#5b5bd6', 50:'#eef0ff', 400:'#7e7df0', 600:'#4a48b8' },
+        live: { DEFAULT:'#84cc16', dim:'#65a30d', glow:'#a3e635' },
+        signal: { amber:'#facc15', red:'#f87171' },
+      },
+      animation: {
+        'pulse-dot': 'pulse-dot 1.6s ease-in-out infinite',
+        'marquee': 'marquee 40s linear infinite',
+      },
+      keyframes: {
+        'pulse-dot': { '0%, 100%': { opacity: '1', transform: 'scale(1)' }, '50%': { opacity: '0.5', transform: 'scale(1.5)' } },
+        'marquee':   { '0%': { transform: 'translateX(0)' }, '100%': { transform: 'translateX(-50%)' } },
+      },
+    },
+  },
+};
+</script>
+<style>
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: dark; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background: #08080b;
+}
+
+/* Subtle grain overlay for warmth */
+.grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='200' height='200' filter='url(%23n)' opacity='0.55'/></svg>");
+  mix-blend-mode: overlay;
+  opacity: 0.07;
+  pointer-events: none;
+}
+
+/* Section hairline */
+.hairline { border-top: 1px solid rgba(220,220,234,0.08); }
+
+/* Mono kbd */
+.kbd {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  padding: 1px 6px;
+  color: #dcdcea;
+}
+
+/* Gradient text on serif */
+.title-gradient {
+  background: linear-gradient(180deg, #ffffff 0%, #b8b8c8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.accent-gradient {
+  background: linear-gradient(90deg, #7e7df0, #84cc16);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Card on light section */
+.light-card {
+  background: #fafaf9;
+  border: 1px solid #e7e5e0;
+  color: #18181b;
+}
+
+/* Hover lift */
+.lift { transition: transform 200ms ease, box-shadow 200ms ease; }
+.lift:hover { transform: translateY(-2px); }
+
+/* Live dot */
+.live-dot {
+  width: 8px; height: 8px; border-radius: 99px; background: #84cc16;
+  box-shadow: 0 0 0 3px rgba(132,204,22,0.18);
+  animation: pulse-dot 1.6s ease-in-out infinite;
+  display: inline-block;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.5); }
+}
+
+/* Marquee row */
+.marquee-track { animation: marquee 40s linear infinite; }
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* Scrollbar styling for screenshot rows */
+.scroll-hide::-webkit-scrollbar { display: none; }
+.scroll-hide { scrollbar-width: none; }
+
+</style>
+</head>
+<body class="bg-ink-950 text-ink-100 antialiased">
+<div id="root"></div>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" data-presets="react">
+
+// ── Nav ───────────────────────────────────────────
+function Nav() {
+  return (
+    <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-ink-950/60 border-b border-white/5">
+      <div className="max-w-7xl mx-auto px-6 py-3 flex items-center gap-8">
+        <a href="#top" className="flex items-center gap-2.5 group">
+          <img src="./public/brand/icon.svg" alt="" className="w-8 h-8" />
+          <span className="font-bold tracking-tight">Taskhauler</span>
+        </a>
+        <div className="hidden md:flex items-center gap-6 text-sm text-ink-300">
+          <a href="#views" className="hover:text-ink-100 transition">Views</a>
+          <a href="#features" className="hover:text-ink-100 transition">Features</a>
+          <a href="#agents" className="hover:text-ink-100 transition">Agents</a>
+          <a href="#architecture" className="hover:text-ink-100 transition">How it works</a>
+          <a href="#whynot" className="hover:text-ink-100 transition">Honest tradeoffs</a>
+        </div>
+        <div className="ml-auto flex items-center gap-3">
+          <a href="https://github.com" className="text-sm text-ink-300 hover:text-ink-100 transition hidden sm:inline">GitHub ↗</a>
+          <a href="#cta" className="text-sm font-medium bg-white text-ink-950 px-3.5 py-1.5 rounded-md hover:bg-accent hover:text-white transition">Get started</a>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+
+// ── Hero ───────────────────────────────────────────
+function Hero() {
+  return (
+    <section id="top" className="relative overflow-hidden pt-32 pb-20 grain">
+      {/* Background gradient */}
+      <div className="absolute inset-0 bg-gradient-to-b from-accent/[0.08] via-transparent to-transparent pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,rgba(91,91,214,0.18),transparent_50%)] pointer-events-none" />
+
+      {/* Stars */}
+      <svg className="absolute inset-0 w-full h-full opacity-50 pointer-events-none" aria-hidden="true">
+        {Array.from({ length: 40 }).map((_, i) => {
+          const x = (i * 137.5) % 100, y = (i * 73.3) % 100;
+          return <circle key={i} cx={`${x}%`} cy={`${y}%`} r={(i % 5) === 0 ? 1.2 : 0.5} fill="#fff" opacity={(i % 7) / 12 + 0.05} />;
+        })}
+      </svg>
+
+      <div className="relative max-w-6xl mx-auto px-6">
+        {/* tag */}
+        <div className="flex justify-center mb-6">
+          <div className="inline-flex items-center gap-2 bg-white/[0.04] border border-white/10 rounded-full px-3 py-1 text-xs text-ink-300 backdrop-blur">
+            <span className="live-dot" />
+            <span className="font-mono tracking-wide">v0.4 · agent presence is now in beta</span>
+          </div>
+        </div>
+
+        <h1 className="text-center font-serif text-[clamp(48px,9vw,124px)] leading-[0.95] tracking-[-0.025em] title-gradient">
+          The kanban for teams<br />
+          of <em className="not-italic accent-gradient">humans &amp; agents.</em>
+        </h1>
+
+        <p className="mt-8 text-center text-lg md:text-xl text-ink-300 max-w-2xl mx-auto leading-relaxed">
+          Taskhauler treats AI agents as first-class members of your team — they pick up cards, report live telemetry, and propose multi-step plans your humans approve. One board, four views, three themes, every collaborator.
+        </p>
+
+        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <a href="#cta" className="bg-white text-ink-950 px-5 py-3 rounded-lg font-semibold text-sm hover:bg-accent hover:text-white transition shadow-lg shadow-black/40">
+            Self-host in 5 minutes →
+          </a>
+          <a href="#views" className="text-ink-200 px-5 py-3 rounded-lg font-medium text-sm border border-white/15 hover:bg-white/5 transition">
+            See it in action
+          </a>
+        </div>
+
+        <div className="mt-4 text-center text-xs text-ink-400 font-mono">
+          MIT-licensed · Docker compose · no SaaS lock-in
+        </div>
+
+        {/* Hero screenshot */}
+        <div className="mt-16 md:mt-20 relative">
+          <div className="absolute inset-x-0 -top-10 h-40 bg-gradient-to-b from-accent/30 to-transparent blur-3xl pointer-events-none" />
+          <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-[0_30px_120px_-20px_rgba(0,0,0,0.8)]">
+            <img src="./public/screenshots/01-kanban.png" alt="Taskhauler kanban view with the agent console rail on the right" className="w-full block" />
+            {/* Floating labels */}
+            <div className="hidden lg:block absolute top-[15%] right-[2%] bg-ink-900/95 backdrop-blur border border-live/30 rounded-lg px-3 py-2 text-xs font-mono shadow-2xl">
+              <div className="flex items-center gap-2">
+                <span className="live-dot" /> @builder is working on HAUL-139
+              </div>
+              <div className="text-ink-400 mt-1">opened PR #2841 · 36s ago</div>
+            </div>
+            <div className="hidden lg:block absolute bottom-[24%] left-[18%] bg-ink-900/95 backdrop-blur border border-accent/30 rounded-lg px-3 py-2 text-xs shadow-2xl">
+              <div className="text-accent-400 font-semibold">5 AI suggestions pending →</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+
+// ── Marquee ───────────────────────────────────────────
+const ITEMS = [
+  'Live agent telemetry',
+  'Multi-step plan proposals',
+  '4 swappable views',
+  '3 themeable skins',
+  'Drag-and-drop everywhere',
+  'Multiplayer presence',
+  'Keyboard-first',
+  'MIT licensed',
+  'Self-hosted',
+  'Webhooks + REST',
+  'Fullscreen focus mode',
+  'Agent-friendly API',
+];
+
+function Marquee() {
+  return (
+    <section className="border-y border-white/5 bg-ink-900/30 overflow-hidden">
+      <div className="flex marquee-track whitespace-nowrap py-4">
+        {[...ITEMS, ...ITEMS].map((item, i) => (
+          <div key={i} className="flex items-center gap-3 mx-6 text-ink-300 text-sm">
+            <span className="w-1 h-1 rounded-full bg-accent-400" />
+            <span className="font-mono tracking-wide">{item}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+
+// ── Manifesto ───────────────────────────────────────────
+function Manifesto() {
+  return (
+    <section className="relative py-32 grain">
+      <div className="max-w-5xl mx-auto px-6">
+        <div className="text-xs font-mono uppercase tracking-[0.2em] text-accent-400 mb-6">
+          THE THESIS
+        </div>
+        <h2 className="font-serif text-4xl md:text-6xl leading-[1.05] tracking-tight title-gradient mb-8">
+          Your team isn't just humans anymore.<br />
+          <span className="text-ink-300 italic font-normal">So why is your kanban?</span>
+        </h2>
+
+        <div className="grid md:grid-cols-2 gap-12 md:gap-16 mt-16">
+          <div>
+            <div className="text-ink-300 leading-relaxed text-lg">
+              <p className="mb-5">
+                Most kanban tools treat AI as a sidebar — a chatbot you can ask, a Copilot that suggests. But real engineering teams in 2026 have agents that <span className="text-ink-100 font-medium">open PRs</span>, <span className="text-ink-100 font-medium">triage bugs</span>, and <span className="text-ink-100 font-medium">cut releases</span> on their own.
+              </p>
+              <p className="mb-5">
+                Those agents are <em>collaborators.</em> They need cards, lanes, status, presence, comments, and pings — same as anyone else on the team.
+              </p>
+              <p className="text-ink-200">
+                Taskhauler is built around that idea from the ground up: every primitive is symmetric for humans and agents, with the right asymmetries where they matter — humans approve, agents propose.
+              </p>
+            </div>
+          </div>
+
+          <div className="relative">
+            <div className="bg-ink-900/60 backdrop-blur border border-white/10 rounded-xl p-6 font-mono text-sm">
+              <div className="text-xs text-ink-400 mb-3 uppercase tracking-wider">live presence · this board</div>
+              <div className="space-y-3">
+                <PresenceRow color="bg-accent" name="Mira Chen" kind="USER" action="viewing HAUL-139" />
+                <PresenceRow color="bg-signal-amber" name="Theo Park" kind="USER" action="editing HAUL-138" />
+                <PresenceRow color="bg-live" mono name="@builder" kind="AGENT" action="working on HAUL-139" agent />
+                <PresenceRow color="bg-live" mono name="@scout" kind="AGENT" action="scanning sentry logs" agent />
+                <PresenceRow color="bg-ink-500" name="Wren Holt" kind="USER" action="idle · 18m ago" muted />
+              </div>
+              <div className="mt-5 pt-4 border-t border-white/10 text-xs text-ink-400">
+                <span className="text-live">●</span> 4 active, 1 idle — same panel, same primitives.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function PresenceRow({ color, name, kind, action, mono, agent, muted }) {
+  return (
+    <div className={`flex items-center gap-3 ${muted ? 'opacity-50' : ''}`}>
+      <span className="relative inline-flex">
+        <span className={`w-6 h-6 rounded-full bg-ink-700 flex items-center justify-center text-[10px] font-bold ${agent ? 'text-live' : 'text-ink-200'}`} style={agent ? { clipPath: 'polygon(20% 0%, 80% 0%, 100% 50%, 80% 100%, 20% 100%, 0% 50%)' } : {}}>
+          {name[0] === '@' ? name[1].toUpperCase() : name.split(' ').map(s => s[0]).join('')}
+        </span>
+        {!muted && <span className={`absolute -right-0.5 -bottom-0.5 w-2 h-2 rounded-full ${color} animate-pulse-dot ring-2 ring-ink-900`} />}
+      </span>
+      <span className={`text-ink-100 ${mono ? 'font-mono' : ''} font-semibold text-[13px]`}>{name}</span>
+      <span className={`text-[9px] font-mono px-1.5 py-0.5 border rounded ${agent ? 'border-live/30 text-live' : 'border-white/15 text-ink-300'}`}>{kind}</span>
+      <span className="text-ink-400 text-xs">{action}</span>
+    </div>
+  );
+}
+
+
+// ── Views ───────────────────────────────────────────
+const VIEWS = [
+  {
+    id: 'kanban',
+    label: 'Kanban',
+    tag: 'the workhorse',
+    title: 'Dense, draggable, keyboard-first',
+    blurb: 'Linear-style columns with rich cards. Group by status, priority, epic, assignee, or due date — the grouping flips columns without losing your selection. Presence avatars bubble onto every card the moment someone opens it.',
+    bullets: [
+      'Drag across columns and groupings',
+      '5 grouping dimensions',
+      'Multi-line cards with progress + epic + estimate',
+      'Hover-revealed quick actions',
+    ],
+    src: './public/screenshots/01-kanban.png',
+  },
+  {
+    id: 'timeline',
+    label: 'Timeline',
+    tag: 'planning',
+    title: 'Haulers in lanes, work in flight',
+    blurb: 'Each lane is a hauler — human or agent. Cards stack by greedy row packing, so collisions never hide work. Drag a card sideways to reschedule, drag it down to reassign. The yellow "now" bar grounds you in real time.',
+    bullets: [
+      'Auto-row-packing — never overlaps',
+      'Width = estimate, position = due date',
+      'Drag to reschedule + reassign in one gesture',
+      'Workload bars per hauler',
+    ],
+    src: './public/screenshots/02-timeline.png',
+  },
+  {
+    id: 'terminal',
+    label: 'Terminal',
+    tag: 'power-user',
+    title: 'Monospace, ASCII, vim-ish',
+    blurb: 'For the people who never left the CLI. A flat table grouped by status, sorted by priority + due, with a blinking cursor on the bottom prompt. Pair with the Mono theme and you have a board you can stare at all day.',
+    bullets: [
+      'Monospace everywhere',
+      'Sortable, scriptable feel',
+      'Pairs perfectly with Mono theme',
+      'Keyboard-only navigation',
+    ],
+    src: './public/screenshots/03-terminal.png',
+  },
+  {
+    id: 'dispatch',
+    label: 'Dispatch',
+    tag: 'agent-heavy',
+    title: 'Fleet bar + prioritized sections',
+    blurb: 'Built for when most of your work is in motion. A horizontal fleet bar shows every agent\'s live load, current card, and tokens/min. Below: Hot, In Flight, Ready, Queue — the columns that actually matter at standup.',
+    bullets: [
+      'Agent fleet bar with live load + token/min',
+      'Hot lane surfaces overdue + urgent automatically',
+      'Compact cards, dense board',
+      'Same primitives as Kanban view',
+    ],
+    src: './public/screenshots/04-dispatch.png',
+  },
+];
+
+function Views() {
+  return (
+    <section id="views" className="relative bg-cream-50 text-ink-900 py-28">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="text-xs font-mono uppercase tracking-[0.2em] text-accent mb-5">
+          ONE BOARD · FOUR LENSES
+        </div>
+        <h2 className="font-serif text-5xl md:text-7xl leading-[1.05] tracking-tight text-ink-900 mb-6 max-w-4xl">
+          The same data,<br />through <span className="italic text-accent">four different lenses.</span>
+        </h2>
+        <p className="text-ink-700 text-lg max-w-2xl mb-16 leading-relaxed">
+          Every view operates on the same cards, columns, and agents. Switch lenses anytime — the cursor stays where it was, your selection survives, your filters carry over.
+        </p>
+
+        <div className="space-y-24">
+          {VIEWS.map((v, i) => (
+            <div key={v.id} className={`grid md:grid-cols-12 gap-8 md:gap-12 items-center ${i % 2 === 1 ? 'md:[&>div:first-child]:order-2' : ''}`}>
+              <div className="md:col-span-5">
+                <div className="flex items-baseline gap-3 mb-3">
+                  <div className="text-3xl font-mono font-bold text-ink-300">0{i + 1}</div>
+                  <div className="text-xs font-mono uppercase tracking-wider text-accent-600">{v.tag}</div>
+                </div>
+                <h3 className="font-serif text-4xl text-ink-900 mb-4 tracking-tight">{v.title}</h3>
+                <p className="text-ink-700 text-base leading-relaxed mb-5">{v.blurb}</p>
+                <ul className="space-y-2">
+                  {v.bullets.map(b => (
+                    <li key={b} className="flex gap-2.5 text-sm text-ink-700">
+                      <span className="text-live-dim mt-0.5">→</span>
+                      <span>{b}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-6 inline-flex items-center gap-2 text-xs font-mono text-ink-500 bg-cream-200/60 rounded px-2.5 py-1.5">
+                  press <span className="kbd !text-ink-700 !bg-white !border-ink-300">V</span> then <span className="kbd !text-ink-700 !bg-white !border-ink-300">{v.label[0]}</span> to switch
+                </div>
+              </div>
+              <div className="md:col-span-7">
+                <div className="rounded-xl overflow-hidden bg-white shadow-[0_20px_80px_-20px_rgba(0,0,0,0.25)] border border-cream-200">
+                  <img src={v.src} alt={`${v.label} view`} className="w-full block" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+
+// ── Features ───────────────────────────────────────────
+const FEATURES = [
+  {
+    title: 'Three themeable skins',
+    blurb: 'Same dense board, three personalities. Day (Linear-style cool neutral), Mono (black + amber, JetBrains Mono everywhere), Paper (warm cream + burnt orange). Themes are CSS custom properties — bring your own.',
+    img: ['./public/screenshots/05-kanban-mono.png', './public/screenshots/06-kanban-paper-theme.png'],
+    accent: 'mono',
+  },
+  {
+    title: 'Console rail with live agent telemetry',
+    blurb: 'A right-side rail showing every agent\'s status, current step, token throughput, and a rolling transcript that updates every 3 seconds. Humans and agents share the same panel — no two-class system.',
+    img: './public/screenshots/01-kanban.png',
+    accent: 'live',
+  },
+  {
+    title: 'Activity feed, time-bucketed',
+    blurb: 'Every action — agent step, comment, move, ship — flows into a single chronological feed. Just now / earlier today / yesterday+. Filter to agents only when standup gets noisy.',
+    img: './public/screenshots/07-rail-activity.png',
+    accent: 'accent',
+  },
+  {
+    title: 'Plans queue — agents propose, humans approve',
+    blurb: 'When an agent wants to do something multi-step ("split this 13pt card into 3 subtasks", "re-prioritize 4 stale auth cards"), it files a Plan. The actions execute atomically only when you approve.',
+    img: './public/screenshots/08-rail-plans.png',
+    accent: 'amber',
+  },
+  {
+    title: 'Focus mode',
+    blurb: 'Press F on any selected card. The whole UI dims and you get a fullscreen, distraction-free view of just that card with its subtasks. Esc to escape.',
+    img: './public/screenshots/09-card-detail.png',
+    accent: 'accent',
+  },
+];
+
+function Features() {
+  return (
+    <section id="features" className="relative bg-ink-950 py-28 grain">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="text-xs font-mono uppercase tracking-[0.2em] text-live mb-5">
+          FEATURES THAT MATTER
+        </div>
+        <h2 className="font-serif text-5xl md:text-7xl leading-[1.05] tracking-tight title-gradient mb-16 max-w-4xl">
+          Built around <span className="italic accent-gradient">live work</span>,<br />not weekly retros.
+        </h2>
+
+        <div className="grid lg:grid-cols-2 gap-6">
+          {FEATURES.map((f, i) => (
+            <FeatureCard key={i} {...f} large={i === 0 || i === 4} />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function FeatureCard({ title, blurb, img, accent, large }) {
+  const accentClasses = {
+    mono: 'from-signal-amber/20',
+    live: 'from-live/20',
+    accent: 'from-accent/20',
+    amber: 'from-signal-amber/20',
+  }[accent];
+
+  return (
+    <div className={`relative bg-ink-900/60 backdrop-blur border border-white/10 rounded-2xl overflow-hidden lift ${large ? 'lg:col-span-2' : ''}`}>
+      <div className={`absolute inset-x-0 top-0 h-32 bg-gradient-to-b ${accentClasses} to-transparent opacity-60 pointer-events-none`} />
+      <div className={`relative p-7 md:p-9 ${large ? 'lg:grid lg:grid-cols-12 lg:gap-8 lg:items-center' : ''}`}>
+        <div className={large ? 'lg:col-span-5' : ''}>
+          <h3 className="font-serif text-3xl text-ink-100 mb-3 tracking-tight">{title}</h3>
+          <p className="text-ink-300 leading-relaxed">{blurb}</p>
+        </div>
+        <div className={`mt-6 ${large ? 'lg:col-span-7 lg:mt-0' : ''}`}>
+          {Array.isArray(img) ? (
+            <div className="grid grid-cols-2 gap-3">
+              {img.map((src, i) => (
+                <div key={i} className="rounded-lg overflow-hidden border border-white/10 bg-ink-900">
+                  <img src={src} alt="" className="w-full block" />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-lg overflow-hidden border border-white/10 bg-ink-900">
+              <img src={img} alt={title} className="w-full block" />
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+// ── Agentic ───────────────────────────────────────────
+function Agentic() {
+  return (
+    <section id="agents" className="relative py-28 grain">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(132,204,22,0.08),transparent_60%)] pointer-events-none" />
+      <div className="relative max-w-7xl mx-auto px-6">
+        <div className="text-xs font-mono uppercase tracking-[0.2em] text-live mb-5">
+          AGENT INTEGRATION
+        </div>
+        <h2 className="font-serif text-5xl md:text-7xl leading-[1.05] tracking-tight title-gradient mb-6 max-w-4xl">
+          Run a dev team that<br />
+          <span className="italic accent-gradient">doesn't sleep.</span>
+        </h2>
+        <p className="text-ink-300 text-lg max-w-2xl mb-16 leading-relaxed">
+          Agents in Taskhauler aren't bolt-on plugins. They're built into the data model — assignees, presence, activity, proposals. Connect any runtime (Claude, OpenAI, your own) via the agent registry, and they become real team members.
+        </p>
+
+        {/* 4 step protocol */}
+        <div className="grid md:grid-cols-4 gap-4 mb-20">
+          {[
+            { n: '01', t: 'Connect', d: 'Register an agent in the alias registry: name, plugin, model, system prompt. Agents get an API token and a hex avatar.' },
+            { n: '02', t: 'Assign', d: 'Drop a card onto an agent\'s lane in Timeline view, or use the assignee picker. Agents subscribe to a webhook for their queue.' },
+            { n: '03', t: 'Work + report', d: 'Agents pull context (description, comments, linked cards), do the work, and emit telemetry every action: step, tokens, transcript.' },
+            { n: '04', t: 'Propose + close', d: 'For anything multi-step, agents file a Plan. Humans approve. The actions execute atomically and the card moves on.' },
+          ].map(step => (
+            <div key={step.n} className="bg-ink-900/60 border border-white/10 rounded-xl p-5 backdrop-blur">
+              <div className="font-mono text-xs text-live mb-2">{step.n}</div>
+              <h3 className="font-semibold text-ink-100 mb-2">{step.t}</h3>
+              <p className="text-ink-400 text-sm leading-relaxed">{step.d}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Two-column: agent telemetry sample + plan sample */}
+        <div className="grid lg:grid-cols-2 gap-6">
+          <div className="bg-ink-900/80 border border-live/20 rounded-2xl overflow-hidden">
+            <div className="px-5 py-3 border-b border-white/10 flex items-center gap-3">
+              <span className="live-dot" />
+              <div className="text-xs font-mono uppercase tracking-wider text-live">live · @builder</div>
+              <span className="ml-auto text-xs font-mono text-ink-400">claude-sonnet-4.5</span>
+            </div>
+            <div className="p-5 font-mono text-sm leading-relaxed">
+              <div className="text-ink-400 text-xs mb-3">› current step</div>
+              <div className="text-ink-100 italic mb-5">Writing migration note from PR #2841 diff…</div>
+
+              <div className="text-ink-400 text-xs mb-3">› transcript (tail -f)</div>
+              <div className="space-y-1 text-ink-200">
+                <div><span className="text-ink-500 mr-2">›</span>wrote 142 LOC across 3 files</div>
+                <div className="opacity-80"><span className="text-ink-500 mr-2">›</span>ran benchmarks: 4.2× faster scroll @ 10k cards</div>
+                <div className="opacity-60"><span className="text-ink-500 mr-2">›</span>tests passing — 247 ✓ / 0 ✗</div>
+                <div className="opacity-40"><span className="text-ink-500 mr-2">›</span>opened PR #2841 — virtualization patch</div>
+              </div>
+
+              <div className="mt-5 flex gap-6 text-xs text-ink-400">
+                <div><span className="text-ink-100 font-bold">80%</span> load</div>
+                <div><span className="text-ink-100 font-bold">1,240</span> tok/min</div>
+                <div><span className="text-ink-100 font-bold">3m 14s</span> active</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-ink-900/80 border border-signal-amber/20 rounded-2xl overflow-hidden">
+            <div className="px-5 py-3 border-b border-white/10 flex items-center gap-3">
+              <span className="w-2 h-2 rounded-full bg-signal-amber" />
+              <div className="text-xs font-mono uppercase tracking-wider text-signal-amber">pending plan · @triage proposes</div>
+              <span className="ml-auto text-xs font-mono text-ink-400">conf 82%</span>
+            </div>
+            <div className="p-5">
+              <h4 className="font-semibold text-ink-100 mb-2">Re-prioritize 4 stale auth cards</h4>
+              <p className="text-ink-400 text-sm leading-relaxed mb-4">Auth epic has 4 cards untouched 14d+. Demote priorities so live work surfaces.</p>
+
+              <div className="bg-ink-950/60 border border-white/5 rounded-lg p-3 font-mono text-xs space-y-1.5">
+                <div><span className="text-signal-amber font-bold">PRIORITY</span> <span className="text-ink-300">set</span> <span className="text-ink-100">HAUL-129</span> high → low</div>
+                <div><span className="text-signal-amber font-bold">PRIORITY</span> <span className="text-ink-300">set</span> <span className="text-ink-100">HAUL-134</span> high → medium</div>
+                <div><span className="text-ink-400 font-bold">LABEL</span> <span className="text-ink-300">add</span> "stale" to <span className="text-ink-100">HAUL-146</span></div>
+                <div><span className="text-live font-bold">MOVE</span> <span className="text-ink-300">move</span> <span className="text-ink-100">HAUL-145</span> Backlog → Done</div>
+              </div>
+
+              <div className="flex gap-2 mt-4">
+                <button className="flex-1 bg-live text-ink-950 px-4 py-2 rounded-md text-sm font-bold hover:bg-live-glow transition">✓ Approve</button>
+                <button className="px-4 py-2 rounded-md text-sm font-medium text-ink-300 border border-white/10 hover:bg-white/5 transition">Reject</button>
+                <button className="px-4 py-2 rounded-md text-sm font-medium text-ink-300 border border-white/10 hover:bg-white/5 transition">Edit</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Key principles */}
+        <div className="mt-16 grid md:grid-cols-3 gap-6">
+          {[
+            { t: 'Symmetric primitives', d: 'Agents and users share the same cards, presence, comments, activity. No second-class plugin surface.' },
+            { t: 'Asymmetric authority', d: 'Agents propose. Humans approve. The Plans queue is the single chokepoint for multi-step changes.' },
+            { t: 'Live by default', d: 'Telemetry streams over WebSocket. No polling. No "agent finished — refresh to see". The UI reflects reality.' },
+          ].map(p => (
+            <div key={p.t} className="border-l-2 border-live/40 pl-5">
+              <h3 className="font-semibold text-ink-100 mb-2">{p.t}</h3>
+              <p className="text-ink-400 text-sm leading-relaxed">{p.d}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+
+// ── Architecture ───────────────────────────────────────────
+function Architecture() {
+  return (
+    <section id="architecture" className="relative bg-cream-50 text-ink-900 py-28">
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="text-xs font-mono uppercase tracking-[0.2em] text-accent mb-5">
+          UNDER THE HOOD
+        </div>
+        <h2 className="font-serif text-5xl md:text-6xl leading-[1.05] tracking-tight mb-6 max-w-3xl">
+          A small, sharp, <span className="italic text-accent">self-hostable</span> stack.
+        </h2>
+        <p className="text-ink-700 text-lg max-w-2xl mb-16 leading-relaxed">
+          Designed to fit in a single docker-compose, deploy to your own infra in minutes, and stay legible for the team that owns it. No telemetry pipeline you can't see. No SaaS dependencies you didn't pick.
+        </p>
+
+        <div className="grid lg:grid-cols-12 gap-8">
+          <div className="lg:col-span-7 bg-white rounded-2xl border border-cream-200 p-8 shadow-sm">
+            <div className="font-mono text-xs text-ink-500 uppercase tracking-wider mb-5">stack</div>
+            <div className="space-y-5">
+              {[
+                { layer: 'Frontend', tech: 'React 19 · Vite · Tailwind 4 · shadcn/ui · Zustand · @dnd-kit', why: 'Modern, fast HMR, components you already know. The kanban board itself is ~12 small files.' },
+                { layer: 'Backend', tech: 'Go · Echo · Postgres · NATS (presence)', why: 'Single binary. Compiles fast. Fits in a Pi or a beefy box. Postgres for data, NATS for the realtime channel.' },
+                { layer: 'Agent runtime', tech: 'Pluggable (Claude SDK · OpenAI · BYO)', why: 'Agents are external processes that connect to an API token. You bring the runtime, Taskhauler is just the surface.' },
+                { layer: 'Realtime', tech: 'WebSocket on /presence, SSE on /activity', why: 'Two simple channels. Presence updates broadcast on connect/disconnect/move. Activity is read-only stream.' },
+              ].map((row) => (
+                <div key={row.layer} className="grid grid-cols-12 gap-4 pb-5 border-b border-cream-200 last:border-0 last:pb-0">
+                  <div className="col-span-3 font-semibold text-ink-900">{row.layer}</div>
+                  <div className="col-span-9">
+                    <div className="font-mono text-sm text-ink-700">{row.tech}</div>
+                    <div className="text-sm text-ink-600 mt-1.5 leading-relaxed">{row.why}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="lg:col-span-5 space-y-4">
+            <div className="bg-ink-950 text-ink-100 rounded-2xl p-7 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-accent/20 via-transparent to-transparent pointer-events-none" />
+              <div className="relative">
+                <div className="font-mono text-xs text-live mb-3 uppercase tracking-wider">deploy</div>
+                <pre className="font-mono text-xs leading-relaxed text-ink-100 overflow-x-auto"><code>{`# Clone and run
+git clone github.com/you/taskhauler
+cd taskhauler
+docker compose up -d
+
+# Hit the board
+open http://localhost:8080`}</code></pre>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-cream-200 p-6">
+              <div className="font-mono text-xs text-accent mb-3 uppercase tracking-wider">resource cost</div>
+              <div className="space-y-2.5 text-sm">
+                <div className="flex justify-between"><span className="text-ink-600">Idle RAM</span><span className="font-mono font-semibold">~80 MB</span></div>
+                <div className="flex justify-between"><span className="text-ink-600">10 users + 5 agents</span><span className="font-mono font-semibold">~140 MB</span></div>
+                <div className="flex justify-between"><span className="text-ink-600">Database (10k cards)</span><span className="font-mono font-semibold">~25 MB</span></div>
+                <div className="flex justify-between"><span className="text-ink-600">P99 API latency</span><span className="font-mono font-semibold">&lt; 12 ms</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Data model */}
+        <div className="mt-16">
+          <div className="text-xs font-mono uppercase tracking-[0.2em] text-accent mb-5">CORE PRIMITIVES</div>
+          <h3 className="font-serif text-3xl text-ink-900 mb-8 max-w-2xl">Eight types. That's the whole system.</h3>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-3 font-mono text-sm">
+            {[
+              { t: 'Board', d: 'name, prefix, settings' },
+              { t: 'Column', d: 'name, position, board_id' },
+              { t: 'Epic', d: 'name, color, board_id' },
+              { t: 'Card', d: 'title, body, status, priority, assignee, due, estimate, progress' },
+              { t: 'User', d: 'name, email, hue' },
+              { t: 'Agent', d: 'name, plugin, telemetry, transcript' },
+              { t: 'Comment', d: 'body, card_id, author' },
+              { t: 'Proposal', d: 'proposer, actions[], status, confidence' },
+            ].map(p => (
+              <div key={p.t} className="bg-white border border-cream-200 rounded-lg p-4">
+                <div className="text-ink-900 font-bold mb-1">{p.t}</div>
+                <div className="text-ink-500 text-xs leading-relaxed">{p.d}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+
+// ── WhyUse ───────────────────────────────────────────
+function WhyUse() {
+  const reasons = [
+    { t: 'You actually run agents.', d: 'If your team has Claude/OpenAI/Cursor agents shipping real work, you need a board that treats them as collaborators — not a chat sidebar.' },
+    { t: 'You want one tool, four lenses.', d: 'Kanban for triage, Timeline for planning, Terminal for power users, Dispatch for ops days. Same data, no context switching.' },
+    { t: 'You self-host on principle.', d: 'No telemetry to a SaaS, no per-seat pricing, no vendor lock-in. Your data lives in your Postgres.' },
+    { t: 'You like proposals over autonomy.', d: 'Agents should propose; humans should approve. The Plans queue is a guardrail you control.' },
+    { t: 'You\'re tired of "AI-powered" sprinkled on a 2018 product.', d: 'Taskhauler is built around agents from the data model up — not bolted on.' },
+    { t: 'You want speed.', d: 'Drag-drop is instant. Theme switch is instant. The whole UI weighs under 300KB gzipped. Postgres + Go for the rest.' },
+  ];
+
+  return (
+    <section className="relative py-28 grain">
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="text-xs font-mono uppercase tracking-[0.2em] text-live mb-5">USE IT WHEN</div>
+        <h2 className="font-serif text-5xl md:text-7xl leading-[1.05] tracking-tight title-gradient mb-12 max-w-4xl">
+          Built for teams that<br /><span className="italic accent-gradient">ship with agents.</span>
+        </h2>
+
+        <div className="grid md:grid-cols-2 gap-5">
+          {reasons.map((r, i) => (
+            <div key={i} className="bg-ink-900/50 border border-white/10 rounded-xl p-6 backdrop-blur lift">
+              <div className="text-live font-mono text-xs mb-3">✓ FIT</div>
+              <h3 className="font-semibold text-ink-100 text-lg mb-2">{r.t}</h3>
+              <p className="text-ink-400 leading-relaxed">{r.d}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+
+// ── WhyNot ───────────────────────────────────────────
+function WhyNot() {
+  const reasons = [
+    { t: 'You\'re a solo developer.', d: 'Honestly, you can use Linear, Things, or a markdown file. The agent integration is the differentiator — if you don\'t run agents, you\'re paying complexity tax for nothing.' },
+    { t: 'You need enterprise SSO + SCIM.', d: 'Out of scope for v0.x. There\'s a JWT layer and an admin role, but no Okta/Azure AD/Google SCIM integration. PRs welcome.' },
+    { t: 'You want a mobile app.', d: 'No native apps. The board is responsive but the Timeline + Terminal views aren\'t designed for touch. Phone is a read-only second-class citizen right now.' },
+    { t: 'You need 1000+ user scale.', d: 'The realtime layer (NATS) is fine, but the activity feed pulls full history on connect. Designed for 5–50 person teams + ~20 agents.' },
+    { t: 'You need automation graphs (Zapier-style).', d: 'Plans are simple action arrays, not DAG-based workflows. Use n8n or your CI/CD if you need branching, retries, conditions.' },
+    { t: 'You want a managed offering.', d: 'There isn\'t one. We don\'t sell hosting, we don\'t have a free tier you\'ll get upsold off of. You spin it up yourself.' },
+    { t: 'You\'re allergic to JavaScript runtimes.', d: 'Frontend is React. If your team won\'t touch Node/Vite for builds, this isn\'t your tool.' },
+    { t: 'You need offline-first / CRDT sync.', d: 'Server-authoritative. If your connection drops, your edits do too. No Linear-style local-first sync (yet).' },
+  ];
+
+  return (
+    <section id="whynot" className="relative bg-cream-50 text-ink-900 py-28">
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="text-xs font-mono uppercase tracking-[0.2em] text-signal-red mb-5">DON'T USE IT WHEN</div>
+        <h2 className="font-serif text-5xl md:text-7xl leading-[1.05] tracking-tight mb-6 max-w-4xl">
+          The <span className="italic text-signal-red">honest tradeoffs.</span>
+        </h2>
+        <p className="text-ink-700 text-lg max-w-2xl mb-14 leading-relaxed">
+          Taskhauler is opinionated. Those opinions cost something. Here's where it's the wrong tool, plainly.
+        </p>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          {reasons.map((r, i) => (
+            <div key={i} className="bg-white border border-cream-200 rounded-xl p-6">
+              <div className="text-signal-red font-mono text-xs mb-3">✕ NOT A FIT</div>
+              <h3 className="font-semibold text-ink-900 text-lg mb-2">{r.t}</h3>
+              <p className="text-ink-600 leading-relaxed text-sm">{r.d}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-12 bg-ink-900 text-ink-100 rounded-2xl p-8 max-w-3xl">
+          <h3 className="font-serif text-2xl mb-3">What we're good at</h3>
+          <p className="text-ink-300 leading-relaxed mb-4">
+            <strong className="text-ink-100">Live, mixed teams.</strong> Humans + agents working on the same board, in real time, with visible work-in-flight. The Plans queue keeps agent autonomy bounded. The Console rail shows you what's happening right now, not in a daily digest.
+          </p>
+          <h3 className="font-serif text-2xl mb-3 mt-6">What we're bad at</h3>
+          <p className="text-ink-300 leading-relaxed">
+            <strong className="text-ink-100">Big-team process.</strong> Sprint planning rituals, OKR rollup, capacity planning, multi-board portfolios. If you live in Jira on purpose, Taskhauler will feel naked.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+
+// ── Comparison ───────────────────────────────────────────
+const TOOLS = [
+  { n: 'Taskhauler', us: true, kanban: 'yes', timeline: 'yes', terminal: 'yes', agents: 'first-class', plans: 'yes', presence: 'yes', selfhost: 'yes', price: 'free · MIT' },
+  { n: 'Linear',     us: false, kanban: 'yes', timeline: 'cycles', terminal: 'no', agents: 'via API', plans: 'no', presence: 'no', selfhost: 'no', price: '$10/seat' },
+  { n: 'Jira',       us: false, kanban: 'yes', timeline: 'yes', terminal: 'no', agents: 'plugin', plans: 'no', presence: 'partial', selfhost: 'yes (DC)', price: 'enterprise' },
+  { n: 'Trello',     us: false, kanban: 'yes', timeline: 'no', terminal: 'no', agents: 'no', plans: 'no', presence: 'no', selfhost: 'no', price: '$5/seat' },
+  { n: 'GitHub Projects', us: false, kanban: 'yes', timeline: 'roadmap', terminal: 'no', agents: 'actions', plans: 'no', presence: 'no', selfhost: 'no', price: 'free + repo' },
+];
+
+const COLS = [
+  { k: 'kanban', l: 'Kanban' },
+  { k: 'timeline', l: 'Timeline' },
+  { k: 'terminal', l: 'Terminal view' },
+  { k: 'agents', l: 'Agents' },
+  { k: 'plans', l: 'Plan proposals' },
+  { k: 'presence', l: 'Presence' },
+  { k: 'selfhost', l: 'Self-host' },
+  { k: 'price', l: 'Price' },
+];
+
+function Comparison() {
+  return (
+    <section className="relative py-28 grain">
+      <div className="max-w-7xl mx-auto px-6">
+        <div className="text-xs font-mono uppercase tracking-[0.2em] text-accent-400 mb-5">VS. THE OTHERS</div>
+        <h2 className="font-serif text-5xl md:text-7xl leading-[1.05] tracking-tight title-gradient mb-12 max-w-4xl">
+          A different shape<br />of <span className="italic accent-gradient">work tool.</span>
+        </h2>
+
+        <div className="overflow-x-auto rounded-2xl border border-white/10">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-white/10 bg-ink-900/40">
+                <th className="text-left p-4 font-semibold text-ink-100 sticky left-0 bg-ink-900/40">Tool</th>
+                {COLS.map(c => <th key={c.k} className="text-left p-4 font-medium text-ink-300 whitespace-nowrap">{c.l}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {TOOLS.map((t) => (
+                <tr key={t.n} className={`border-b border-white/5 ${t.us ? 'bg-accent/5' : ''}`}>
+                  <td className={`p-4 font-semibold sticky left-0 ${t.us ? 'text-accent-400 bg-accent/5' : 'text-ink-100 bg-ink-950'}`}>
+                    <div className="flex items-center gap-2">
+                      {t.us && <img src="./public/brand/icon.svg" className="w-5 h-5" alt="" />}
+                      <span>{t.n}</span>
+                    </div>
+                  </td>
+                  {COLS.map(c => (
+                    <td key={c.k} className={`p-4 ${t.us ? 'text-ink-100' : 'text-ink-400'} whitespace-nowrap font-mono text-xs`}>
+                      <Cell value={t[c.k]} />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="mt-6 text-xs text-ink-400 font-mono">
+          Not a hit-piece — Linear and Jira do plenty Taskhauler doesn't. This table only highlights the axes where Taskhauler is opinionated.
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Cell({ value }) {
+  if (value === 'yes') return <span className="text-live">●  yes</span>;
+  if (value === 'no')  return <span className="text-ink-500">○  no</span>;
+  if (value === 'first-class') return <span className="text-live font-semibold">★  first-class</span>;
+  return <span>{value}</span>;
+}
+
+
+// ── FAQ ───────────────────────────────────────────
+const QA = [
+  { q: 'What\'s the deal with "agents"? What runs them?', a: 'You do. Taskhauler doesn\'t embed a model — agents are external processes (a script using the Claude/OpenAI/Anthropic SDK, a long-running Python service, whatever) that authenticate via an API token. They subscribe to webhooks for their queue and POST telemetry back. The flexibility is intentional: you bring the runtime, we provide the surface.' },
+  { q: 'Can I disable the agent stuff entirely?', a: 'Yes. The Console rail toggles off, agents are just users you never invite. The Plans queue is empty. You get a clean, fast kanban with 4 views and 3 themes — like a self-hosted Linear-lite.' },
+  { q: 'How does the realtime layer work?', a: 'A single WebSocket per client on /presence, scoped to the active board. Presence updates are tiny (~80 bytes) and broadcast to other clients on the board. Activity events come over SSE on /activity?since=cursor. Both are server-authoritative — no CRDT, no local-first.' },
+  { q: 'Can I bring my own theme?', a: 'Yes. Themes are CSS custom properties applied to :root[data-theme="..."]. Add a new selector with your tokens (background, surface, accent, etc.) and your theme appears in the swatch row. Bring your own font stack via --font-sans / --font-mono.' },
+  { q: 'What\'s the API surface like for agents?', a: 'REST + SSE. The agent reads /api/cards/:id, posts /api/cards/:id/comments, updates its presence on /presence, files proposals on /api/proposals. The full OpenAPI spec is in /docs/api.yaml.' },
+  { q: 'Is there a UI for agent ops (start/stop/configure)?', a: 'A small one in admin: list of registered agent aliases, last-seen timestamps, ability to revoke tokens. Most teams hook this into their existing service registry.' },
+  { q: 'Why Go on the backend?', a: 'Single binary deploys. Fast startup. Mature WebSocket libraries. Boring in a good way. We were not going to add a Python or Node runtime just for a kanban backend.' },
+  { q: 'Can I migrate from Linear / Jira?', a: 'There\'s a one-shot importer for Linear (uses their GraphQL export) and a Jira CSV adapter. Both preserve card IDs, links, comments, and labels. They do NOT preserve workflow rules or automations — Taskhauler doesn\'t have a direct mapping for those.' },
+  { q: 'How fragile is the agent presence / live transcript stuff?', a: 'It\'s an enhancement, not a requirement. If an agent doesn\'t send telemetry, its card just looks like a normal assigned card. The board still works. We treat the live feel as progressive enhancement, not a load-bearing feature.' },
+  { q: 'Does it work offline?', a: 'No. If you close your laptop, your changes pause. We\'re not building local-first sync this year.' },
+];
+
+function FAQ() {
+  return (
+    <section className="relative bg-cream-50 text-ink-900 py-28">
+      <div className="max-w-4xl mx-auto px-6">
+        <div className="text-xs font-mono uppercase tracking-[0.2em] text-accent mb-5">QUESTIONS</div>
+        <h2 className="font-serif text-5xl md:text-6xl leading-[1.05] tracking-tight mb-12 max-w-3xl">
+          The stuff people <span className="italic text-accent">actually ask.</span>
+        </h2>
+
+        <div className="space-y-3">
+          {QA.map((item, i) => (
+            <details key={i} className="group bg-white border border-cream-200 rounded-xl p-6 [&_summary::-webkit-details-marker]:hidden">
+              <summary className="flex items-start justify-between gap-4 cursor-pointer list-none">
+                <h3 className="font-semibold text-ink-900 text-lg leading-snug">{item.q}</h3>
+                <span className="text-accent text-xl mt-0.5 transition-transform group-open:rotate-45 flex-shrink-0">+</span>
+              </summary>
+              <p className="mt-4 text-ink-700 leading-relaxed">{item.a}</p>
+            </details>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+
+// ── CTA ───────────────────────────────────────────
+function CTA() {
+  return (
+    <section id="cta" className="relative py-32 overflow-hidden grain">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_60%_at_50%_50%,rgba(91,91,214,0.20),transparent_70%)] pointer-events-none" />
+      <div className="relative max-w-4xl mx-auto px-6 text-center">
+        <img src="./public/brand/icon.svg" alt="" className="w-16 h-16 mx-auto mb-8" />
+        <h2 className="font-serif text-5xl md:text-7xl leading-[1.0] tracking-tight title-gradient mb-6">
+          Ship with your<br /><span className="italic accent-gradient">whole team.</span>
+        </h2>
+        <p className="text-ink-300 text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
+          Five minutes to self-host. MIT-licensed. Bring as many humans and agents as you have.
+        </p>
+
+        <div className="bg-ink-900/80 backdrop-blur border border-white/10 rounded-2xl p-6 max-w-2xl mx-auto text-left font-mono text-sm mb-8">
+          <div className="text-xs text-ink-400 mb-3 uppercase tracking-wider">install</div>
+          <div className="space-y-1.5 text-ink-100">
+            <div><span className="text-live mr-2">$</span>git clone https://github.com/you/taskhauler</div>
+            <div><span className="text-live mr-2">$</span>cd taskhauler &amp;&amp; docker compose up -d</div>
+            <div><span className="text-live mr-2">$</span>open http://localhost:8080</div>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <a href="https://github.com/your-repo" className="bg-white text-ink-950 px-6 py-3 rounded-lg font-semibold text-sm hover:bg-accent hover:text-white transition shadow-lg shadow-black/40">
+            Star on GitHub →
+          </a>
+          <a href="https://github.com/your-repo#docs" className="text-ink-200 px-6 py-3 rounded-lg font-medium text-sm border border-white/15 hover:bg-white/5 transition">
+            Read the docs
+          </a>
+          <a href="https://discord.gg/your-server" className="text-ink-200 px-6 py-3 rounded-lg font-medium text-sm border border-white/15 hover:bg-white/5 transition">
+            Join Discord
+          </a>
+        </div>
+
+        <div className="mt-12 text-xs font-mono text-ink-400">
+          v0.4 · 2026-05 · MIT licensed · maintained by a tiny team
+        </div>
+      </div>
+    </section>
+  );
+}
+
+
+// ── Footer ───────────────────────────────────────────
+function Footer() {
+  return (
+    <footer className="border-t border-white/10 py-10 bg-ink-950">
+      <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
+        <div className="flex items-center gap-3">
+          <img src="./public/brand/icon.svg" alt="" className="w-7 h-7" />
+          <div>
+            <div className="font-bold tracking-tight text-sm">Taskhauler</div>
+            <div className="text-xs text-ink-400 font-mono">kanban for teams of humans + agents</div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-10 gap-y-3 text-sm">
+          <div>
+            <div className="text-xs uppercase tracking-wider text-ink-500 font-mono mb-2">Product</div>
+            <a href="#views" className="block text-ink-300 hover:text-ink-100 transition mb-1">Views</a>
+            <a href="#features" className="block text-ink-300 hover:text-ink-100 transition mb-1">Features</a>
+            <a href="#agents" className="block text-ink-300 hover:text-ink-100 transition">Agents</a>
+          </div>
+          <div>
+            <div className="text-xs uppercase tracking-wider text-ink-500 font-mono mb-2">Docs</div>
+            <a href="#architecture" className="block text-ink-300 hover:text-ink-100 transition mb-1">Architecture</a>
+            <a href="#" className="block text-ink-300 hover:text-ink-100 transition mb-1">API reference</a>
+            <a href="#" className="block text-ink-300 hover:text-ink-100 transition">Agent SDK</a>
+          </div>
+          <div>
+            <div className="text-xs uppercase tracking-wider text-ink-500 font-mono mb-2">Community</div>
+            <a href="#" className="block text-ink-300 hover:text-ink-100 transition mb-1">GitHub</a>
+            <a href="#" className="block text-ink-300 hover:text-ink-100 transition mb-1">Discord</a>
+            <a href="#" className="block text-ink-300 hover:text-ink-100 transition">Blog</a>
+          </div>
+          <div>
+            <div className="text-xs uppercase tracking-wider text-ink-500 font-mono mb-2">Legal</div>
+            <a href="#" className="block text-ink-300 hover:text-ink-100 transition mb-1">MIT license</a>
+            <a href="#" className="block text-ink-300 hover:text-ink-100 transition mb-1">Privacy</a>
+            <a href="#" className="block text-ink-300 hover:text-ink-100 transition">Security</a>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 mt-8 pt-6 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-ink-500">
+        <div className="font-mono">© 2026 Taskhauler contributors</div>
+        <div className="font-mono">built with React · Vite · Tailwind · ❤︎</div>
+      </div>
+    </footer>
+  );
+}
+
+
+
+function App() {
+  return (
+    <div className="min-h-screen relative">
+      <Nav />
+      <Hero />
+      <Marquee />
+      <Manifesto />
+      <Views />
+      <Features />
+      <Agentic />
+      <Architecture />
+      <WhyUse />
+      <WhyNot />
+      <Comparison />
+      <FAQ />
+      <CTA />
+      <Footer />
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
