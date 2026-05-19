@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 import type { Epic } from "@/api/types";
 
 interface EpicChipProps {
-  epic: Epic;
+  epic: Epic | undefined;
   size?: "sm" | "md";
 }
 
@@ -18,6 +18,7 @@ interface EpicChipProps {
  * color-mix. This reads well in all three themes.
  */
 export default function EpicChip({ epic, size = "sm" }: EpicChipProps) {
+  if (!epic) return null;
   const padY = size === "sm" ? 1 : 2;
   const padX = size === "sm" ? 5 : 7;
   const fontSize = size === "sm" ? 10.5 : 11.5;

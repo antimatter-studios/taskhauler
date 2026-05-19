@@ -30,13 +30,8 @@ describe('EpicChip', () => {
     expect(container.textContent).toContain('Onboarding')
   })
 
-  it('does not render safely when epic is undefined (KNOWN BUG)', () => {
-    // SPEC: should return null when epic is undefined.
-    // ACTUAL: component dereferences epic.color / epic.name unconditionally
-    // and throws. Tracking as bug — when fixed, this assertion should be
-    // flipped to `expect(container.firstChild).toBeNull()`.
-    expect(() =>
-      render(<EpicChip epic={undefined as unknown as Epic} />),
-    ).toThrow()
+  it('renders nothing when epic is undefined', () => {
+    const { container } = render(<EpicChip epic={undefined} />)
+    expect(container.firstChild).toBeNull()
   })
 })
