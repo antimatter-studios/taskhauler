@@ -8,24 +8,33 @@ A standalone task tracker. Deployable on its own, usable by humans, drivable by 
 
 ## Layout
 
-Monorepo with three deployable units:
+Monorepo with four deployable units:
 
 ```
 backend/      Go service (gin + GORM + Postgres). REST + MCP under /api/v1.
               JWT auth, service-account tokens, OpenAPI spec generated from source.
-frontend/     React app (Vite, Tailwind v4, Radix UI). Kanban board, epics, sub-boards.
-              Talks to backend over /api/v1; same-origin in production.
-website/      Marketing site (separate Vite + React + Tailwind project). Fully static.
-Taskfile.yml  Orchestrator — raw `docker run` for postgres, backend, frontend, website.
-              DDT (docker-dev-tools) provides the reverse proxy + .localhost DNS.
+frontend/     React 19 app (Vite, TypeScript, Tailwind v4, shadcn/ui, Zustand,
+              @dnd-kit). 4 views: Kanban / Timeline / Terminal / Dispatch.
+              3 themes: Day / Mono / Paper. Talks to backend over /api/v1 same-origin.
+website/      Marketing site (separate Vite + React 18 + Tailwind v3 project).
+              Fully static, served by nginx.
+prototype/    React + Babel-in-browser design prototype (no build step). Visual
+              source of truth for the production stacks. See docs/.
+docs/         Design specs (v2-spec-inventory, frontend-v2-status), gap analyses,
+              board inventories, branding (docs/logo/), screenshots (docs/screenshots/).
+Taskfile.yml  Orchestrator — raw `docker run` for postgres, backend, frontend,
+              website, prototype. DDT (docker-dev-tools) provides the reverse
+              proxy + .localhost DNS.
 ```
 
 ## Design notes
 
 - [docs/zitadel.md](docs/zitadel.md) — planned migration from local JWT auth to a central ZITADEL-based IdP serving the whole Antimatter Studios ecosystem.
-- [docs/frontend-v2-status.md](docs/frontend-v2-status.md) — feature status + mock-data strategy for the `frontend-v2` redesign. 100% prototype-fidelity UI now; mocks get swapped for live API as endpoints land.
-- [docs/v2-gap-analysis.md](docs/v2-gap-analysis.md) — exhaustive audit against the v2 spec, implementation, and Task Hauler board. 49 new cards + 15 annotations + 4 critical bugs fixed in code.
-  Companion inventories: [spec](docs/v2-spec-inventory.md) (210 entries) / [impl](docs/v2-impl-inventory.md) (59 files) / [board](docs/v2-board-inventory.md) (148 cards).
+- [docs/v2-spec-inventory.md](docs/v2-spec-inventory.md) — 210 SPEC-NN entries (tokens, components, behaviors). The distilled design spec.
+- [docs/frontend-v2-status.md](docs/frontend-v2-status.md) — feature status + mock-data strategy + rollout plan. 100% prototype-fidelity UI now; mocks get swapped for live API as endpoints land.
+- [docs/v2-gap-analysis.md](docs/v2-gap-analysis.md) — exhaustive audit against the design spec, implementation, and Task Hauler board.
+  Companion inventories: [impl](docs/v2-impl-inventory.md) / [board](docs/v2-board-inventory.md) / [coverage map](docs/v2-board-coverage-map.md).
+- [docs/screenshots/](docs/screenshots/) — visual reference (9 captioned PNGs from the prototype).
 
 ## Quick start (local dev)
 
@@ -40,7 +49,8 @@ task urls             # show the URLs to open
 
 Open:
 - App — http://taskhauler.localhost
-- Marketing — http://marketing.taskhauler.localhost
+- Marketing — http://www.taskhauler.localhost
+- Prototype — http://prototype.taskhauler.localhost
 - API — http://taskhauler.localhost/api/v1
 - OpenAPI spec — http://taskhauler.localhost/api/v1/openapi.json
 
@@ -86,15 +96,16 @@ The tracker inside teamagentica is good but limited by being embedded in a platf
 
 Tradeoff: another service to run, another contract to version. And TA now has a network dependency where it previously had an in-process call — needs caching / graceful degradation for the UI to stay snappy.
 
-## UI (v1)
+## UI
 
-The starting point is a clone of teamagentica's existing tracker UI: a **kanban board** with support for **epics** and **multiple sub-boards** scoped to specific topics. That UI already works in practice — no reason to redesign before extraction.
+Started as a clone of teamagentica's tracker UI (kanban + epics + sub-boards) for the v1 extraction; now expanded to a 4-view design (see [docs/v2-spec-inventory.md](docs/v2-spec-inventory.md)):
 
-- Kanban is the primary view (columns = statuses, cards = tasks).
-- Epics group related tasks across the board.
-- Sub-boards let a single project host multiple focused views instead of one giant board.
+- **Kanban** — primary view. Columns = statuses, cards = tasks. Drag-drop across columns / by priority / by epic / by assignee / by due.
+- **Timeline** — lanes by hauler (humans + agents), cards positioned by due date, width = estimate. Drag to reassign or reschedule.
+- **Terminal** — monospace ASCII table grouped by status, sorted by priority. For console-flavoured workflows.
+- **Dispatch** — fleet bar of agents at top + 4 prioritised sections (Hot / In Flight / Ready / Queue) for agent-heavy ops.
 
-Other views (list, calendar, timeline) are out of scope for v1.
+Plus 3 themes (Day / Mono / Paper), a 3-tab right rail (Console / Activity / Plans), a Focus modal, and multiplayer presence. Epics group related tasks; sub-boards scope a project into multiple focused boards.
 
 ## Core model (draft)
 
@@ -107,49 +118,45 @@ Other views (list, calendar, timeline) are out of scope for v1.
 
 Open: are sub-boards just *filtered views* of one underlying board, or genuinely separate boards with their own column sets? TA's behaviour should decide this.
 
-Open: sub-tasks / dependencies in v1? Lean: punt.
+Open: sub-tasks / dependencies. Subtasks currently render in the Focus modal backed by localStorage (per-card key `taskhauler.subtasks.<cardId>`); a real subtasks domain (table + CRUD) is in [docs/frontend-v2-status.md](docs/frontend-v2-status.md) backend gaps. Dependencies still punted.
 
 ## How agents and integrations talk to it
 
 Three parallel surfaces, all backed by the same core operations:
 
-### 1. REST + webhooks
+### 1. REST
 
-Predictable JSON, stable IDs, idempotent writes, paginated lists, since-cursors, structured error reasons.
+Predictable JSON, stable IDs, structured error reasons. The full surface is generated as an [OpenAPI 3 spec](http://taskhauler.localhost/api/v1/openapi.json) from Go source — 37 paths, 95 schemas. Shape:
 
-- `POST /projects/:id/tasks` — create
-- `GET /projects/:id/tasks?status=…&updated_since=…` — list
-- `PATCH /tasks/:id` — update
-- `POST /tasks/:id/comments` — append activity
-- `POST /webhooks/github` — inbound integration
-- `POST /webhooks/outbound` — register a sink
+- `GET /boards` · `POST /boards` · `PUT /boards/:id` · `DELETE /boards/:id`
+- `GET /boards/:id/columns` · `POST /boards/:id/columns` · `PUT /boards/:id/columns/:cid`
+- `GET /boards/:id/epics` · `POST /boards/:id/epics` · `PUT /boards/:id/epics/:eid`
+- `GET /boards/:id/cards` · `POST /boards/:id/cards` · `PUT /boards/:id/cards/:cid` · `DELETE /boards/:id/cards/:cid`
+- `GET /boards/:id/cards/search?q=…` · `GET /boards/:id/cards/number/:num` · `GET /cards/:cid`
+- `GET /cards/:cid/comments` · `POST /cards/:cid/comments` · `DELETE /cards/:cid/comments/:cmid`
+- `POST /auth/login` · `POST /auth/refresh` · `GET /auth/me` · `POST /auth/logout`
+- `GET /service-accounts` · `POST /service-accounts` · `POST /service-accounts/:id/tokens`
 
-Open: GraphQL or REST? Lean REST.
+Webhooks (`POST /webhooks/github`, outbound sinks) are planned but not yet implemented.
 
 ### 2. MCP server
 
-A first-class MCP server exposes the same operations as tools, so any MCP-capable agent (Claude Desktop, Claude Code, other clients) can drive TH without writing HTTP plumbing. Examples of tools to expose:
+A built-in MCP server at `/api/v1/mcp/*` exposes the core operations as tool endpoints, so any MCP-capable agent (Claude Desktop, Claude Code, other clients) can drive TH without writing HTTP plumbing:
 
-- `taskhauler.create_task`, `taskhauler.update_task`, `taskhauler.list_tasks`
-- `taskhauler.add_comment`, `taskhauler.move_to_column`
-- `taskhauler.create_epic`, `taskhauler.link_task_to_epic`
+- `POST /mcp/list_boards` · `create_board` · `rename_board` · `delete_board`
+- `POST /mcp/list_epics` · `create_epic` · `update_epic` · `delete_epic`
+- `POST /mcp/list_tasks` · `list_tasks_by_status` · `create_task` · `update_task` · `set_task_state` · `search_tasks` · `add_comment`
+- `GET /mcp` returns the tool manifest
 
-Auth via scoped tokens passed in MCP config. The MCP server is just a thin adapter over the REST API — single source of truth on the server side.
+Auth via the same Bearer tokens as REST (JWT for users, `tha_*` for service accounts). The MCP server is a thin adapter over the storage layer — same source of truth as REST.
 
 ### 3. Skills
 
-Packaged agent skills (Claude Code skills, and equivalents for other runtimes) that wrap the common patterns rather than exposing raw CRUD. The point of skills is workflow ergonomics:
-
-- `record-work` — agent finishes a task and posts a structured result with links, artifacts, and status change.
-- `triage-incoming` — given a freeform request, pick project/board/labels and create the task.
-- `pick-next` — find the highest-priority `agent-ready` task assigned to me.
-- `report-blocked` — add a comment with reason and move card to a blocked column.
-
-Skills compose with the MCP server; they don't bypass it.
+A packaged Claude Code skill ships in [`.claude/skills/taskhauler/SKILL.md`](.claude/skills/taskhauler/SKILL.md). It documents auth, every CRUD endpoint, URL conventions (`PREFIX-N` card numbering, shareable `/<PREFIX>/<num>` paths), and the multi-line-body Python idiom for non-trivial card descriptions/comments. Workflow-level skills (record-work, triage-incoming, pick-next, etc.) are planned on top of this base.
 
 ### Auth
 
-Scoped API tokens for everyone (humans mint them via UI; agents/integrations/MCP use them directly). Per-token scope at minimum at project granularity, ideally per-board.
+JWT for interactive users (1h access + 30d refresh, via `/auth/login`). Service-account tokens for non-interactive callers — opaque `tha_<hex>` strings issued under `/service-accounts/:id/tokens`, hashed sha256 in the DB. Same `Authorization: Bearer` header for both; middleware detects the prefix and routes to the right validation path.
 
 ## Primary agent use case
 
@@ -198,7 +205,7 @@ Published under the Antimatter Studios brand. Self-hosting remains an open quest
 ## Open questions
 
 1. Single-tenant (just you) vs. multi-tenant from day one? Affects auth + data model heavily.
-2. DB — Postgres unless there's a reason not to.
+2. ~~DB — Postgres unless there's a reason not to~~ — answered: Postgres in prod, GORM with SQLite-driver fallback for tests.
 3. Migration from teamagentica's in-process tracker — dual-write window, or hard cutover? TA keeps its UI but switches the data layer to API calls; latency/caching strategy needs deciding.
-4. ~~UI scope for v1~~ — answered: clone TA's kanban + epics + sub-boards.
+4. ~~UI scope for v1~~ — answered: v1 cloned TA's kanban + epics + sub-boards; the redesign now ships 4 views (Kanban / Timeline / Terminal / Dispatch) + 3 themes + rail tabs. See [docs/v2-spec-inventory.md](docs/v2-spec-inventory.md).
 5. Self-hostable as a first-class deployment mode, or hosted-only at first?
