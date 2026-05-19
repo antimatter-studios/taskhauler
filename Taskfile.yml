@@ -32,9 +32,11 @@ vars:
   FRONTEND_CONTAINER: taskhauler-frontend
   FRONTEND_V2_CONTAINER: taskhauler-frontend-v2
   WEBSITE_V2_CONTAINER: taskhauler-website-v2
+  PROTOTYPE_CONTAINER: taskhauler-prototype
   DOMAIN: taskhauler.localhost
   DOMAIN_V2: taskhauler-v2.localhost
   MARKETING_DOMAIN_V2: www-v2.taskhauler.localhost
+  PROTOTYPE_DOMAIN: prototype.taskhauler.localhost
   # Source TA SQLite DBs (read-only) for one-shot import
   TA_SQLITE: /Volumes/sdcard256gb/projects/agentplatform/teamagentica/data/storage-disk/storage-root/private/tool-task-tracker/tasks.db
   TA_USERS_SQLITE: /Volumes/sdcard256gb/projects/agentplatform/teamagentica/data/storage-disk/storage-root/private/system-user-manager/users.db
@@ -376,6 +378,59 @@ tasks:
     cmds:
       - docker logs -f {{.WEBSITE_V2_CONTAINER}}
 
+  # ── Prototype (design reference, React + Babel-in-browser via CDN) ──────────
+
+  prototype:build:dev:
+    desc: Build the prototype dev image (nginx + no-cache config for live JSX edits)
+    cmds:
+      - docker build --target dev -t {{.PROJECT}}-prototype:dev prototype/
+
+  prototype:build:prod:
+    desc: Build the prototype prod image (nginx + files baked in)
+    cmds:
+      - docker build --target prod -t {{.PROJECT}}-prototype:latest prototype/
+
+  prototype:dev:
+    desc: Run the prototype with the source bind-mounted (edit on host, refresh browser)
+    deps: [prototype:build:dev]
+    cmds:
+      - task: prototype:stop
+      - |
+        docker run -d --rm \
+          --name {{.PROTOTYPE_CONTAINER}} \
+          --network {{.NETWORK}} \
+          -v $(pwd)/prototype:/usr/share/nginx/html:ro \
+          -l com.docker.compose.project={{.PROJECT}} \
+          -l com.docker.compose.service=prototype \
+          -l docker-proxy.taskhauler-prototype.host={{.PROTOTYPE_DOMAIN}} \
+          -l docker-proxy.taskhauler-prototype.port=80 \
+          {{.PROJECT}}-prototype:dev
+      - task: net:attach-proxy
+
+  prototype:prod:
+    desc: Run the prototype with files baked into the image
+    deps: [prototype:build:prod]
+    cmds:
+      - task: prototype:stop
+      - |
+        docker run -d --rm \
+          --name {{.PROTOTYPE_CONTAINER}} \
+          --network {{.NETWORK}} \
+          -l com.docker.compose.project={{.PROJECT}} \
+          -l com.docker.compose.service=prototype \
+          -l docker-proxy.taskhauler-prototype.host={{.PROTOTYPE_DOMAIN}} \
+          -l docker-proxy.taskhauler-prototype.port=80 \
+          {{.PROJECT}}-prototype:latest
+      - task: net:attach-proxy
+
+  prototype:stop:
+    cmds:
+      - docker stop {{.PROTOTYPE_CONTAINER}} 2>/dev/null || true
+
+  prototype:logs:
+    cmds:
+      - docker logs -f {{.PROTOTYPE_CONTAINER}}
+
   # ── Proxy attach (idempotent) ───────────────────────────────────────────────
 
   net:attach-proxy:
@@ -390,7 +445,7 @@ tasks:
   # ── Bundles ─────────────────────────────────────────────────────────────────
 
   dev:
-    desc: Start everything in HMR dev mode (postgres + backend-v1 + frontend + frontend-v2 + website-v2)
+    desc: Start everything in HMR dev mode (postgres + backend-v1 + frontend + frontend-v2 + website-v2 + prototype)
     cmds:
       - task: ddt:check
       - task: db:up
@@ -398,11 +453,12 @@ tasks:
       - task: frontend:dev
       - task: frontend:v2:dev
       - task: website:v2:dev
+      - task: prototype:dev
       - sleep 2
       - task: urls
 
   prod:
-    desc: Start everything in prod mode (compiled backend-v1 + nginx-served frontend/v2/website-v2)
+    desc: Start everything in prod mode (compiled backend-v1 + nginx-served frontend/v2/website-v2 + prototype)
     cmds:
       - task: ddt:check
       - task: db:up
@@ -410,6 +466,7 @@ tasks:
       - task: frontend:prod
       - task: frontend:v2:prod
       - task: website:v2:prod
+      - task: prototype:prod
       - sleep 2
       - task: urls
 
@@ -419,6 +476,7 @@ tasks:
       - task: frontend:stop
       - task: frontend:v2:stop
       - task: website:v2:stop
+      - task: prototype:stop
       - task: backend:v1:stop
       - task: db:down
 
@@ -432,6 +490,7 @@ tasks:
         echo "  App (v1):      http://{{.DOMAIN}}"
         echo "  App (v2):      http://{{.DOMAIN_V2}}"
         echo "  Marketing:     http://{{.MARKETING_DOMAIN_V2}}"
+        echo "  Prototype:     http://{{.PROTOTYPE_DOMAIN}}"
         echo "  API:           http://{{.DOMAIN}}/api/v1"
         echo "  OpenAPI spec:  http://{{.DOMAIN}}/api/v1/openapi.json"
         echo ""
@@ -535,3 +594,4 @@ tasks:
       - docker rmi {{.BACKEND_V1_IMAGE}}:dev {{.BACKEND_V1_IMAGE}}:latest 2>/dev/null || true
       - docker rmi {{.PROJECT}}-frontend:dev {{.PROJECT}}-frontend:latest 2>/dev/null || true
       - docker rmi {{.PROJECT}}-website-v2:dev {{.PROJECT}}-website-v2:latest 2>/dev/null || true
+      - docker rmi {{.PROJECT}}-prototype:dev {{.PROJECT}}-prototype:latest 2>/dev/null || true
