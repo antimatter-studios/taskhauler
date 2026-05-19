@@ -119,6 +119,16 @@ export default function FocusModal() {
     setSubtasks(loadSubtasks(card, sortedCards));
   }, [card?.id, sortedCards]);
 
+  // Find the "Done" column for the ship action. Heuristic: last column by
+  // position, or one named "Done" (case-insensitive). Hoisted above the
+  // early return below so hook order stays stable across renders.
+  const doneColumn = useMemo(() => {
+    const byName = columns.find((c) => c.name.toLowerCase() === "done");
+    if (byName) return byName;
+    const sorted = [...columns].sort((a, b) => a.position - b.position);
+    return sorted[sorted.length - 1];
+  }, [columns]);
+
   if (!focusedCardId || !card) return null;
 
   const epic = epics.find((e) => e.id === card.epic_id);
@@ -136,15 +146,6 @@ export default function FocusModal() {
   const assigneeName = card.assignee_agent
     ? `@${card.assignee_agent}`
     : assigneeUser?.display_name || card.assignee_name || "";
-
-  // Find the "Done" column for ship action. Heuristic: last column by position,
-  // or one named "Done" (case-insensitive).
-  const doneColumn = useMemo(() => {
-    const byName = columns.find((c) => c.name.toLowerCase() === "done");
-    if (byName) return byName;
-    const sorted = [...columns].sort((a, b) => a.position - b.position);
-    return sorted[sorted.length - 1];
-  }, [columns]);
 
   const handleMarkShipped = () => {
     if (!doneColumn || !activeBoardId) return;

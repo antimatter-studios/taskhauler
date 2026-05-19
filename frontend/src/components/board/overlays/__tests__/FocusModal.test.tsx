@@ -114,21 +114,14 @@ describe('FocusModal', () => {
     expect(document.body.textContent).toContain('Mark shipped')
   })
 
-  // SKIPPED: FocusModal.tsx has a hooks-rules violation — `useMemo(doneColumn)`
-  // on line ~142 sits AFTER the `if (!focusedCardId || !card) return null;`
-  // early-return on line ~122. When the modal transitions from focused → not
-  // focused (Escape press OR Mark shipped click → focusCard(null)), the next
-  // render returns null before reaching the useMemo, causing React to throw
-  // "Rendered fewer hooks than expected." Move the useMemo above the early
-  // return to fix; these tests will then pass.
-  it.skip('Escape key closes the modal (focusedCardId → null) [BUG: hook-order violation]', () => {
+  it('Escape key closes the modal (focusedCardId → null)', () => {
     render(<FocusModal />)
     expect(useBoardUIStore.getState().focusedCardId).toBe('card-1')
     fireEvent.keyDown(window, { key: 'Escape' })
     expect(useBoardUIStore.getState().focusedCardId).toBeNull()
   })
 
-  it.skip('clicking "Mark shipped" moves the card to the Done column and closes [BUG: hook-order violation]', () => {
+  it('clicking "Mark shipped" moves the card to the Done column and closes', () => {
     render(<FocusModal />)
     const shipBtn = Array.from(document.body.querySelectorAll('button')).find(
       (b) => (b.textContent ?? '').includes('Mark shipped'),
@@ -140,9 +133,6 @@ describe('FocusModal', () => {
   })
 
   it('renders Mark shipped button and the Esc · close button in the header', () => {
-    // Smoke-only because of the hook bug noted above; we can verify the
-    // buttons are wired (rendered with click handlers attached) without
-    // actually firing them.
     render(<FocusModal />)
     const shipBtn = Array.from(document.body.querySelectorAll('button')).find(
       (b) => (b.textContent ?? '').includes('Mark shipped'),
