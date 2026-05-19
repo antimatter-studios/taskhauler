@@ -1,6 +1,6 @@
 # Frontend v2 — Validation Report
 
-> Generated against `frontend-v2/` (commit head `6879de1` + the audit fixes) and `backend-v1/` (same head). Companion to [v2-gap-analysis.md](v2-gap-analysis.md).
+> Generated against `frontend/` (commit head `6879de1` + the audit fixes) and `backend/` (same head). Companion to [v2-gap-analysis.md](v2-gap-analysis.md).
 >
 > Purpose: verify the ~60 Done cards on the Task Hauler board actually do what they claim, via unit tests where possible and code review otherwise.
 
@@ -104,7 +104,7 @@ Platform/Backend (no tests):
 - TH-13 MCP endpoints (functional but not under test)
 - TH-14 OpenAPI generation (committed `openapi.json` is the evidence)
 - TH-17 Internal event emitter
-- TH-18 Backend Dockerfile (`task backend:v1:build:prod` is the smoke test)
+- TH-18 Backend Dockerfile (`task backend:build:prod` is the smoke test)
 - TH-19 CORS middleware (manually verified during the v2 cross-origin work)
 - TH-21 Theme system (CSS variables; visual)
 - TH-22 Font loading (CSS; visual)
@@ -195,14 +195,14 @@ Things we deliberately didn't test, and why:
 
 ```sh
 # Frontend tests
-cd frontend-v2 && npm test          # 87 tests, ~1s
+cd frontend && npm test          # 87 tests, ~1s
 
 # Backend tests
-cd backend-v1 && go test ./...      # 38 tests, ~10s
+cd backend && go test ./...      # 38 tests, ~10s
 
 # Coverage
-cd frontend-v2 && npm run test:coverage
-cd backend-v1 && go test ./... -cover
+cd frontend && npm run test:coverage
+cd backend && go test ./... -cover
 ```
 
 ## Result

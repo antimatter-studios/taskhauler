@@ -1,6 +1,6 @@
 # Taskhauler v2 — Canonical Implementation Inventory
 
-Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/src/` plus `index.html`. Build is clean (`tsc -b && vite build` exits 0, 1634 modules, 349.5 kB JS / 30.4 kB CSS).
+Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend/src/` plus `index.html`. Build is clean (`tsc -b && vite build` exits 0, 1634 modules, 349.5 kB JS / 30.4 kB CSS).
 
 ---
 
@@ -20,7 +20,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 **Looks incomplete or wrong:**
 - Title is "Taskhauler v2" — fine, but no `<meta name="description">`.
 
-**File reference:** `frontend-v2/index.html:1`
+**File reference:** `frontend/index.html:1`
 
 ---
 
@@ -35,7 +35,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 **Looks incomplete or wrong:**
 - MISMATCH: comment says "default to dark mode" but theme is selected via `data-theme` attribute (set by `applyTheme`); the `.dark` class does nothing in this codebase (Tailwind 4 + custom `data-theme` rules). Dead.
 
-**File reference:** `frontend-v2/src/main.tsx:8`
+**File reference:** `frontend/src/main.tsx:8`
 
 ---
 
@@ -50,7 +50,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 - When booted and no user → `<LoginForm />`.
 - When user present → `<Board />`.
 
-**File reference:** `frontend-v2/src/App.tsx:7`
+**File reference:** `frontend/src/App.tsx:7`
 
 ---
 
@@ -69,7 +69,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 - Body font-size: 13px, line-height 1.5, antialiased.
 - Custom 8px-wide scrollbars using `--border` and `--border-hi`.
 
-**File reference:** `frontend-v2/src/index.css:1`
+**File reference:** `frontend/src/index.css:1`
 
 ---
 
@@ -78,7 +78,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 **Lines:** 6
 **Exports:** `cn(...inputs)`
 **Implements:** Standard shadcn-style `twMerge(clsx(...))` helper.
-**File reference:** `frontend-v2/src/lib/utils.ts:4`
+**File reference:** `frontend/src/lib/utils.ts:4`
 
 ---
 
@@ -92,7 +92,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 - `fmtDate(ts)`: full `toLocaleString` with month/day/year/hour/minute.
 - `MS_PER_DAY = 86_400_000`.
 
-**File reference:** `frontend-v2/src/lib/time.ts:29`
+**File reference:** `frontend/src/lib/time.ts:29`
 
 ---
 
@@ -106,7 +106,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 - Safe in SSR (no-ops if `document`/`localStorage` undefined).
 - Validator function `isThemeName` rejects unknowns.
 
-**File reference:** `frontend-v2/src/lib/theme.ts:23`
+**File reference:** `frontend/src/lib/theme.ts:23`
 
 ---
 
@@ -120,7 +120,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 - Before idx=0 → `firstPos - 1000`.
 - Between → midpoint `(a + b) / 2`.
 - Float-based, never need renumbering.
-**File reference:** `frontend-v2/src/lib/positions.ts:20`
+**File reference:** `frontend/src/lib/positions.ts:20`
 
 ---
 
@@ -133,7 +133,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 - Sort by `x` ascending (stable on original index).
 - For each item, pick lowest-indexed row whose rowEnd ≤ x; else open new row.
 - Returns `number[]` of row indices in caller's input order.
-**File reference:** `frontend-v2/src/lib/pack-rows.ts:21`
+**File reference:** `frontend/src/lib/pack-rows.ts:21`
 
 ---
 
@@ -151,7 +151,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 **Hardcoded / mock / stub:**
 - No `estimate`, `comment_count`, `blocked_by` fields — these get faked elsewhere.
 
-**File reference:** `frontend-v2/src/api/types.ts:33`
+**File reference:** `frontend/src/api/types.ts:33`
 
 ---
 
@@ -171,7 +171,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 - `auth.login` writes both tokens to localStorage on success. `auth.logout` is fire-and-forget POST + storage clear.
 - `users.listUsers` calls `/users` (may 404 — userStore tolerates).
 
-**File reference:** `frontend-v2/src/api/client.ts:88`
+**File reference:** `frontend/src/api/client.ts:88`
 
 ---
 
@@ -185,7 +185,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 - `logout()` calls `apiClient.auth.logout()` + clears user.
 - `fetchMe()` short-circuits if `!isAuthenticated()`, else calls `/auth/me`.
 
-**File reference:** `frontend-v2/src/stores/authStore.ts:15`
+**File reference:** `frontend/src/stores/authStore.ts:15`
 
 ---
 
@@ -205,7 +205,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 **Looks incomplete or wrong:**
 - No optimistic-update logic for drag-drop in the store — views call `updateCard` and wait for server response before state updates. No error UI for failed `updateCard`.
 
-**File reference:** `frontend-v2/src/stores/kanbanStore.ts:48`
+**File reference:** `frontend/src/stores/kanbanStore.ts:48`
 
 ---
 
@@ -222,7 +222,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 **Looks incomplete or wrong:**
 - **CRITICAL NAMING MISMATCH:** The store exports `setFilter`, `selectCard`, `focusCard` — but several callers (Board.tsx, BoardRightRail.tsx, BoardFilterRow.tsx) try to read non-existent `setFilterAssignee`, `setSelectedCardId`, `setFocusedCardId` via `(s as any).X` and get `undefined`. The `?.()` optional-call swallows the error silently. **Affected features are broken at runtime even though TS doesn't catch them.**
 
-**File reference:** `frontend-v2/src/stores/boardUIStore.ts:75`
+**File reference:** `frontend/src/stores/boardUIStore.ts:75`
 
 ---
 
@@ -232,7 +232,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 **Exports:** `useUserStore`.
 **Implements:** `fetch()` calls `apiClient.users.listUsers()`; on any error sets `users: []` and error=null. Comment notes the endpoint may not exist yet.
 
-**File reference:** `frontend-v2/src/stores/userStore.ts:15`
+**File reference:** `frontend/src/stores/userStore.ts:15`
 
 ---
 
@@ -245,7 +245,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 **Hardcoded / mock / stub:**
 - Permanent stub — never makes an HTTP call.
 
-**File reference:** `frontend-v2/src/stores/agentStore.ts:13`
+**File reference:** `frontend/src/stores/agentStore.ts:13`
 
 ---
 
@@ -255,7 +255,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 **Exports:** `MOCK_INBOX = 7`.
 **Implements:** Constant integer 7. Used by sidebar for inbox count.
 **Hardcoded / mock / stub:** Literally the number 7 — no underlying data.
-**File reference:** `frontend-v2/src/mock/inbox.ts:3`
+**File reference:** `frontend/src/mock/inbox.ts:3`
 
 ---
 
@@ -264,7 +264,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 **Lines:** 64
 **Exports:** `MOCK_USERS: MockUser[]` (5 entries — Mira/Theo/Sana/Jules/Wren with ids 101–105), `MockUser` extends `UserDetails` with `handle`, `avatar` (initials), `hue`.
 **Implements:** Hues drive `oklch(0.7 0.13 <hue>)` background and `oklch(0.25 0.05 <hue>)` foreground in UserChip.
-**File reference:** `frontend-v2/src/mock/users.ts:23`
+**File reference:** `frontend/src/mock/users.ts:23`
 
 ---
 
@@ -273,7 +273,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 **Lines:** 60
 **Exports:** `MOCK_AGENTS: MockAgent[]` (6 agents: relay, scout, atlas, oracle, vega, pylon). Each has `name`, `plugin` (anthropic/openai/google), `model`, `description`, `status` ("working" | "idle").
 **Implements:** Currently 4 working (relay, scout, oracle, pylon) / 2 idle (atlas, vega).
-**File reference:** `frontend-v2/src/mock/agents.ts:17`
+**File reference:** `frontend/src/mock/agents.ts:17`
 
 ---
 
@@ -282,7 +282,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 **Lines:** 78
 **Exports:** `MOCK_TELEMETRY: AgentTelemetry[]` (6 entries — one per MOCK_AGENT).
 **Implements:** Per-agent `status`, `load` (0..1), `tok` (tokens/min), `step` (one-liner or null), `current_card_id` (placeholder ids like `"mock-card-2"`), `last_act` (ms).
-**File reference:** `frontend-v2/src/mock/telemetry.ts:23`
+**File reference:** `frontend/src/mock/telemetry.ts:23`
 
 ---
 
@@ -291,7 +291,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 **Lines:** 79
 **Exports:** `MOCK_TRANSCRIPTS: Record<string, AgentTranscriptLine[]>` — keyed by agent name, 8 lines per agent for all 6 mock agents.
 **Implements:** Each line `{agent, ts, text}` with timestamps relative to `Date.now()` at module load. Atlas/vega lines are old (47+ minutes ago) reflecting idle state.
-**File reference:** `frontend-v2/src/mock/transcripts.ts:18`
+**File reference:** `frontend/src/mock/transcripts.ts:18`
 
 ---
 
@@ -301,7 +301,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 **Exports:** `MOCK_PRESENCE: PresenceEntry[]` (9 entries: 5 users pr1-pr5, 4 agents pr6-pr9). `PresenceAction`, `PresenceKind`, `PresenceEntry`.
 **Implements:** Each entry has `kind`, `user_id` xor `agent_name`, `action`, `card_id` (placeholder or null), `at`.
 - Active actions: pr1 viewing, pr2 editing, pr3 commenting, pr4 viewing, pr6 working, pr7 working, pr8 scanning. Idle: pr5, pr9.
-**File reference:** `frontend-v2/src/mock/presence.ts:35`
+**File reference:** `frontend/src/mock/presence.ts:35`
 
 ---
 
@@ -317,7 +317,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 **Looks incomplete or wrong:**
 - MISMATCH: top-of-file comment says "just now" is `< 30 minutes` but mock entry a7 is at 28 min and a8 is at 1.1h — boundary works. Header inside ActivityRail uses `< 0.5` hours = 30 min. Consistent.
 
-**File reference:** `frontend-v2/src/mock/activity.ts:36`
+**File reference:** `frontend/src/mock/activity.ts:36`
 
 ---
 
@@ -326,7 +326,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 **Lines:** 154
 **Exports:** `MOCK_PROPOSALS: Proposal[]` (6 entries p1–p6). `ProposalStatus`, `ProposalAction` (8 kinds: priority/move/label/split/ping/archive/assign/due), `Proposal`.
 **Implements:** 3 pending (p1/p2/p3), 2 approved (p4/p5), 1 rejected (p6 with rejection reason).
-**File reference:** `frontend-v2/src/mock/proposals.ts:47`
+**File reference:** `frontend/src/mock/proposals.ts:47`
 
 ---
 
@@ -335,7 +335,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 **Lines:** 58
 **Exports:** `MOCK_SUGGESTIONS: Suggestion[]` (5 entries s1–s5). `SuggestionKind` (promote/split/assign/escalate/archive/link).
 **Implements:** Each has `text`, optional `card_id` placeholder, optional `reason`. s5 has no card_id (board-level).
-**File reference:** `frontend-v2/src/mock/suggestions.ts:23`
+**File reference:** `frontend/src/mock/suggestions.ts:23`
 
 ---
 
@@ -344,7 +344,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 **Lines:** 41
 **Exports:** `MOCK_SUBTASKS: Record<string, Subtask[]>`. Keyed by mock-card-N. Only 4 cards seeded (mock-card-1/2/3/4) with 3–6 subtasks each.
 **Implements:** Each subtask `{id, card_id, text, done, position}`.
-**File reference:** `frontend-v2/src/mock/subtasks.ts:14`
+**File reference:** `frontend/src/mock/subtasks.ts:14`
 
 ---
 
@@ -352,7 +352,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 
 **Lines:** 48
 **Implements:** Documents the strategy ("render every panel at full visual fidelity"), file table, the `mock-card-N` placeholder remapping convention, rules for adding new mocks.
-**File reference:** `frontend-v2/src/mock/README.md:1`
+**File reference:** `frontend/src/mock/README.md:1`
 
 ---
 
@@ -367,7 +367,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 - Error block in red color-mix when `error`.
 - Disabled submit when loading or empty fields.
 - DEV-only hint block: "admin@taskhauler.localhost / admin".
-**File reference:** `frontend-v2/src/components/LoginForm.tsx:4`
+**File reference:** `frontend/src/components/LoginForm.tsx:4`
 
 ---
 
@@ -391,7 +391,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 - **BUG:** `setFocusedCardId` is undefined on the store (store exports `focusCard`). Optional-call swallows it silently. **F key + Esc focus reset are no-ops at runtime.**
 - eslint-disable on first useEffect's empty deps.
 
-**File reference:** `frontend-v2/src/components/board/Board.tsx:21`
+**File reference:** `frontend/src/components/board/Board.tsx:21`
 
 ---
 
@@ -413,7 +413,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 - Workspace switcher (Taskhauler) button has no onClick.
 - NavRow buttons (Inbox/My issues/AI suggestions) have no onClick.
 
-**File reference:** `frontend-v2/src/components/board/BoardSidebar.tsx:8`
+**File reference:** `frontend/src/components/board/BoardSidebar.tsx:8`
 
 ---
 
@@ -437,7 +437,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 **Looks incomplete or wrong:**
 - `filtered = cards` comment says "filter logic lives in the views layer" — so the "N of N" count is always "total of total".
 
-**File reference:** `frontend-v2/src/components/board/BoardTopBar.tsx:14`
+**File reference:** `frontend/src/components/board/BoardTopBar.tsx:14`
 
 ---
 
@@ -456,7 +456,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 - **CRITICAL BUG #1:** Group buttons send `"status"` but KanbanView checks for `"col"`. Clicking "Status" button gives the empty `return []` from `KanbanView`'s grouping function — board appears blank.
 - **CRITICAL BUG #2:** `setFilterAssignee` doesn't exist on the store (store exposes `setFilter`). Filter chip buttons (All/Mine/Agents) do nothing at runtime.
 
-**File reference:** `frontend-v2/src/components/board/BoardFilterRow.tsx:5`
+**File reference:** `frontend/src/components/board/BoardFilterRow.tsx:5`
 
 ---
 
@@ -475,7 +475,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 - Apply button: `console.log("[suggestion] apply", top?.id)` — explicit "not yet wired" comment at top.
 - Dismiss button: `console.log("[suggestion] dismiss", top?.id)`.
 
-**File reference:** `frontend-v2/src/components/board/BoardAISuggestionStrip.tsx:33`
+**File reference:** `frontend/src/components/board/BoardAISuggestionStrip.tsx:33`
 
 ---
 
@@ -493,7 +493,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 **Looks incomplete or wrong:**
 - **BUG:** `setSelectedCardId` doesn't exist on store (store has `selectCard`). "Back to console" link is a runtime no-op.
 
-**File reference:** `frontend-v2/src/components/board/BoardRightRail.tsx:19`
+**File reference:** `frontend/src/components/board/BoardRightRail.tsx:19`
 
 ---
 
@@ -510,7 +510,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 **Hardcoded / mock / stub:**
 - Palettes are hardcoded — no theming. Always cyan/yellow regardless of active theme.
 
-**File reference:** `frontend-v2/src/components/board/primitives/AgentChip.tsx:22`
+**File reference:** `frontend/src/components/board/primitives/AgentChip.tsx:22`
 
 ---
 
@@ -523,7 +523,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 - Hue from `user.hue` if present, else `hashHue(display_name)` (FNV-like rolling hash mod 360).
 - `initials(displayName)` = first+last initial uppercase; single word → first 2 chars; empty → "?".
 - Colors: `oklch(0.7 0.13 <hue>)` bg, `oklch(0.25 0.05 <hue>)` fg.
-**File reference:** `frontend-v2/src/components/board/primitives/UserChip.tsx:37`
+**File reference:** `frontend/src/components/board/primitives/UserChip.tsx:37`
 
 ---
 
@@ -533,7 +533,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 **Exports:** default `AssigneeChip` (userId?, agentName?, size=22, working?).
 **Reads from mock:** `MOCK_USERS`.
 **Implements:** Dispatcher — agentName → AgentChip; userId>0 + MOCK_USERS hit → UserChip; else "?" dashed circle placeholder.
-**File reference:** `frontend-v2/src/components/board/primitives/AssigneeChip.tsx:17`
+**File reference:** `frontend/src/components/board/primitives/AssigneeChip.tsx:17`
 
 ---
 
@@ -550,7 +550,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 **Looks incomplete or wrong:**
 - Long comment claims a data-theme-mono CSS attribute override exists but the code doesn't actually special-case mono.
 
-**File reference:** `frontend-v2/src/components/board/primitives/EpicChip.tsx:20`
+**File reference:** `frontend/src/components/board/primitives/EpicChip.tsx:20`
 
 ---
 
@@ -559,7 +559,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 **Lines:** 27
 **Exports:** default `PresenceDot` (color, active=true).
 **Implements:** Absolute-positioned 7×8px dot at bottom-right of parent. boxShadow `0 0 0 1.5px var(--surface)`. Pulses (1.6s) when active.
-**File reference:** `frontend-v2/src/components/board/primitives/PresenceDot.tsx:12`
+**File reference:** `frontend/src/components/board/primitives/PresenceDot.tsx:12`
 
 ---
 
@@ -579,7 +579,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 **Looks incomplete or wrong:**
 - `PresenceEntry` type here uses `name`/`userId` fields, but `MOCK_PRESENCE` uses `agent_name`/`user_id`. Callers cast `as any` (BoardTopBar) — duplicate type definition with subtle mismatch.
 
-**File reference:** `frontend-v2/src/components/board/primitives/PresenceCluster.tsx:11`
+**File reference:** `frontend/src/components/board/primitives/PresenceCluster.tsx:11`
 
 ---
 
@@ -591,7 +591,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 - Returns null if no priority.
 - urgent: 8×8 red square with 13% red color-mix outer ring.
 - low/medium/high: three vertical bars 2.5px wide, heights `[4,4,4]`/`[4,7,4]`/`[4,7,10]`, fills `[1,0,0]`/`[1,1,0]`/`[1,1,1]`. Filled bar color: high→amber, others→text-2; empty bar→border-hi.
-**File reference:** `frontend-v2/src/components/board/primitives/PriorityIndicator.tsx:13`
+**File reference:** `frontend/src/components/board/primitives/PriorityIndicator.tsx:13`
 
 ---
 
@@ -600,7 +600,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 **Lines:** 29
 **Exports:** default `KeyHint` (children).
 **Implements:** Small `<kbd>` element, 16px height/min-width, mono font 10px, 2px bottom border (mock keycap), surface bg.
-**File reference:** `frontend-v2/src/components/board/primitives/KeyHint.tsx:10`
+**File reference:** `frontend/src/components/board/primitives/KeyHint.tsx:10`
 
 ---
 
@@ -627,7 +627,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 - "blocked icon — Card type has no blocked_by field yet, so omitted." (comment).
 - "comment count omitted — Card type has no count field yet." (comment).
 
-**File reference:** `frontend-v2/src/components/board/cards/KanbanCard.tsx:36`
+**File reference:** `frontend/src/components/board/cards/KanbanCard.tsx:36`
 
 ---
 
@@ -641,7 +641,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 - Selected: accent-bg + 2px accent left border.
 - Same `mockEstimate(id)` hash duplicated inline (comment says "Kept inline to avoid coupling: the views agent owns both files.").
 
-**File reference:** `frontend-v2/src/components/board/cards/TerminalRow.tsx:28`
+**File reference:** `frontend/src/components/board/cards/TerminalRow.tsx:28`
 
 ---
 
@@ -659,7 +659,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 - P0 badge (red border, mono 9px) when priority === "urgent".
 - Selected: heavier shadow `0 0 0 3px color-mix(in srgb, var(--accent) 55%, transparent)`.
 
-**File reference:** `frontend-v2/src/components/board/cards/TimelineBar.tsx:30`
+**File reference:** `frontend/src/components/board/cards/TimelineBar.tsx:30`
 
 ---
 
@@ -676,7 +676,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 - Load bar (3px): width = load * 100%, color = accent when working else text-3.
 - Mono "NN%" right-aligned.
 
-**File reference:** `frontend-v2/src/components/board/cards/DispatchAgentTile.tsx:35`
+**File reference:** `frontend/src/components/board/cards/DispatchAgentTile.tsx:35`
 
 ---
 
@@ -684,7 +684,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 
 **Lines:** 9
 **Exports:** re-exports `ViewSwitcher`, `KanbanView`, `TimelineView`, `TerminalView`, `DispatchView`.
-**File reference:** `frontend-v2/src/components/board/views/index.ts:5`
+**File reference:** `frontend/src/components/board/views/index.ts:5`
 
 ---
 
@@ -696,7 +696,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 **Looks incomplete or wrong:**
 - `activeBoardId` prop is unused (`_props`). Comment explicitly notes this is for future-proofing.
 
-**File reference:** `frontend-v2/src/components/board/views/ViewSwitcher.tsx:17`
+**File reference:** `frontend/src/components/board/views/ViewSwitcher.tsx:17`
 
 ---
 
@@ -729,7 +729,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 - **Bug interaction with BoardFilterRow:** the row writes `"status"` for the Column grouping, but this code matches on `"col"`. With status group selected, board renders empty. So all 5 modes ARE wired here, but only 4 are reachable via the UI ("col" is the default).
 - No error handling around `updateCard`.
 
-**File reference:** `frontend-v2/src/components/board/views/KanbanView.tsx:102`
+**File reference:** `frontend/src/components/board/views/KanbanView.tsx:102`
 
 ---
 
@@ -763,7 +763,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 - `agentTelemetry(name).status === "working"` looked up multiple times (no memo).
 - The `data.handle` and `data.avatar` fields on Lane.data are declared but never actually read.
 
-**File reference:** `frontend-v2/src/components/board/views/TimelineView.tsx:42`
+**File reference:** `frontend/src/components/board/views/TimelineView.tsx:42`
 
 ---
 
@@ -783,7 +783,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 **Hardcoded / mock / stub:**
 - Synthetic "board --list ..." command line.
 
-**File reference:** `frontend-v2/src/components/board/views/TerminalView.tsx:36`
+**File reference:** `frontend/src/components/board/views/TerminalView.tsx:36`
 
 ---
 
@@ -808,7 +808,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 - Column name regex matching is brittle (e.g. if board has no "In Progress" / "Backlog" column, falls back to position index).
 - Hot section is read-only.
 
-**File reference:** `frontend-v2/src/components/board/views/DispatchView.tsx:127`
+**File reference:** `frontend/src/components/board/views/DispatchView.tsx:127`
 
 ---
 
@@ -823,7 +823,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 - Active tab gets `var(--bg)` background, `inset 0 0 0 1px var(--border-hi)` shadow.
 - Badge style: active → accent bg + accent-fg color; inactive → border bg + text-2.
 
-**File reference:** `frontend-v2/src/components/board/rail/RailTabs.tsx:18`
+**File reference:** `frontend/src/components/board/rail/RailTabs.tsx:18`
 
 ---
 
@@ -850,7 +850,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 - `dotColorForAction` includes a special case `(isAgent && action === "scanning") → green` (otherwise scanning → text-3). Subtle.
 - Transcript scroll animation is just a cycling array indexer — appears as discrete steps every 3.2s, not a smooth tail.
 
-**File reference:** `frontend-v2/src/components/board/rail/ConsoleRail.tsx:469`
+**File reference:** `frontend/src/components/board/rail/ConsoleRail.tsx:469`
 
 ---
 
@@ -871,7 +871,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 **Looks incomplete or wrong:**
 - Empty-state for an active filter that yields no items in a bucket → bucket just hidden (`if (!list.length) return null`). No "no events" fallback.
 
-**File reference:** `frontend-v2/src/components/board/rail/ActivityRail.tsx:224`
+**File reference:** `frontend/src/components/board/rail/ActivityRail.tsx:224`
 
 ---
 
@@ -895,7 +895,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 - "Propose a plan" CTA button has no onClick.
 - `PlanActionLine` `due` formats with `fmtDate(action.to)` — good.
 
-**File reference:** `frontend-v2/src/components/board/rail/PlansRail.tsx:17`
+**File reference:** `frontend/src/components/board/rail/PlansRail.tsx:17`
 
 ---
 
@@ -921,7 +921,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 - The `HAUL-<n>` heading is hardcoded — doesn't use the active board's `prefix`.
 - `reverseMockId` is duplicated in FocusModal.
 
-**File reference:** `frontend-v2/src/components/board/rail/CardDetailPanel.tsx:25`
+**File reference:** `frontend/src/components/board/rail/CardDetailPanel.tsx:25`
 
 ---
 
@@ -951,7 +951,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 - Modal HAUL-N badge is hardcoded — doesn't use board.prefix.
 - No error handling around `updateCard`.
 
-**File reference:** `frontend-v2/src/components/board/overlays/FocusModal.tsx:77`
+**File reference:** `frontend/src/components/board/overlays/FocusModal.tsx:77`
 
 ---
 
@@ -959,7 +959,7 @@ Scope: every file under `/Volumes/sdcard256gb/projects/taskhauler/frontend-v2/sr
 
 **Lines:** 1 (assumed standard)
 **Exports:** vite env reference comment.
-**File reference:** `frontend-v2/src/vite-env.d.ts:1`
+**File reference:** `frontend/src/vite-env.d.ts:1`
 
 ---
 

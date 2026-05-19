@@ -24,8 +24,8 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
   - Marketing website: 2 cards (Done 1 / In Progress 0 / Backlog 1 / Review 0)
   - Future integrations: 6 cards (Done 0 / In Progress 0 / Backlog 6 / Review 0)
 - **By label (top 15):**
-  - frontend-v2 — 50 cards
-  - backend-v1 — 28 cards
+  - frontend — 50 cards
+  - backend — 28 cards
   - backend-gap — 11 cards
   - views — 10 cards
   - auth — 9 cards
@@ -62,10 +62,10 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Labels:** monorepo, extraction
 - **Assignee agent:** (none)
 - **Description (full):**
-  The TA tool-task-tracker plugin was tightly coupled to the agent platform. The product value of a kanban tool exceeded that of an embedded component, so it was extracted into its own deployable. The new repo lives at https://github.com/antimatter-studios/taskhauler and is organised as a monorepo (backend-v1/, frontend/, frontend-v2/, website/) under Antimatter Studios.
+  The TA tool-task-tracker plugin was tightly coupled to the agent platform. The product value of a kanban tool exceeded that of an embedded component, so it was extracted into its own deployable. The new repo lives at https://github.com/antimatter-studios/taskhauler and is organised as a monorepo (backend/, frontend/, frontend/, website/) under Antimatter Studios.
 - **Comments (if any):** (none)
 - **Suggested category mapping:** infra
-- **What this card claims to track:** The historical extraction of the TA tool-task-tracker plugin into a standalone monorepo under Antimatter Studios — establishes the repo layout (backend-v1/, frontend/, frontend-v2/, website/).
+- **What this card claims to track:** The historical extraction of the TA tool-task-tracker plugin into a standalone monorepo under Antimatter Studios — establishes the repo layout (backend/, frontend/, frontend/, website/).
 
 ### TH-2: Adopt version-per-service deployment pattern
 
@@ -76,7 +76,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Labels:** version-per-service, architecture
 - **Assignee agent:** (none)
 - **Description (full):**
-  Each API version is its own deployable: backend-v1/ now, future backend-v2/ alongside. The DDT proxy routes /api/v1 → taskhauler-backend-v1 and would route /api/v2 → taskhauler-backend-v2. Frontend follows the same: frontend/, frontend-v2/. This means versions can diverge in stack, schema, and roadmap without touching each other.
+  Each API version is its own deployable: backend/ now, future backend-v2/ alongside. The DDT proxy routes /api/v1 → taskhauler-backend and would route /api/v2 → taskhauler-backend-v2. Frontend follows the same: frontend/, frontend/. This means versions can diverge in stack, schema, and roadmap without touching each other.
 - **Comments (if any):** (none)
 - **Suggested category mapping:** infra
 - **What this card claims to track:** The architecture decision that each API/UI version is its own deployable, so backends and frontends can diverge without coupling.
@@ -90,7 +90,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Labels:** ddt, routing
 - **Assignee agent:** (none)
 - **Description (full):**
-  All services register with the DDT proxy via docker-proxy.<name>.host/.port/.path labels (the TA pattern). Routes: taskhauler.localhost (frontend v1), taskhauler-v2.localhost (frontend v2), taskhauler.localhost/api/v1 (backend), marketing.taskhauler.localhost (website). DDT proxy + DNS started by 'ddt start'.
+  All services register with the DDT proxy via docker-proxy.<name>.host/.port/.path labels (the TA pattern). Routes: taskhauler.localhost (frontend v1), taskhauler.localhost (frontend v2), taskhauler.localhost/api/v1 (backend), marketing.taskhauler.localhost (website). DDT proxy + DNS started by 'ddt start'.
 - **Comments (if any):** (none)
 - **Suggested category mapping:** infra
 - **What this card claims to track:** Local-dev domain routing through the DDT reverse proxy, mapping *.localhost hostnames to each container.
@@ -175,7 +175,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** high
 - **Type:** task
-- **Labels:** backend-v1, postgres, gorm
+- **Labels:** backend, postgres, gorm
 - **Assignee agent:** (none)
 - **Description (full):**
   Replaces the original SQLite-via-pluginsdk layer. AutoMigrate runs on startup. Per-board sequential card numbers via backfillCardNumbers. Soft deletes via gorm.DeletedAt across all entities. Schema preserved from the TA plugin (same field names + JSON shape) so existing data imports cleanly.
@@ -189,7 +189,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** high
 - **Type:** task
-- **Labels:** backend-v1, jwt, auth
+- **Labels:** backend, jwt, auth
 - **Assignee agent:** (none)
 - **Description (full):**
   POST /auth/login → access (1h) + refresh (30d) tokens. POST /auth/refresh exchanges a refresh token for a new access token. GET /auth/me returns the authed user. Passwords are bcrypt cost 12 (matches TA's hashing so imported users keep their existing creds). JWT secret from JWT_SECRET env var (required).
@@ -203,7 +203,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** medium
 - **Type:** task
-- **Labels:** backend-v1, auth, service-accounts
+- **Labels:** backend, auth, service-accounts
 - **Assignee agent:** (none)
 - **Description (full):**
   Long-lived bearer tokens for non-interactive callers (other apps, agents, CI). Admin-only management under /service-accounts/*. Tokens are opaque random strings prefixed 'tha_'; hashed with sha256 in the DB. Same Authorization: Bearer header as JWT — middleware detects the prefix and routes to the right validation path.
@@ -217,7 +217,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** high
 - **Type:** task
-- **Labels:** backend-v1, rest, api
+- **Labels:** backend, rest, api
 - **Assignee agent:** (none)
 - **Description (full):**
   Gin router under router.Group("/api/v1"). Mirrors the TA plugin's surface: list/create/get/update/delete on every entity, plus search (LIKE on title/description/labels) and lookup-by-number for cards. Response shapes include enriched fields like assignee_name and status_name resolved on the server.
@@ -231,7 +231,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** medium
 - **Type:** task
-- **Labels:** backend-v1, mcp
+- **Labels:** backend, mcp
 - **Assignee agent:** (none)
 - **Description (full):**
   POST /mcp/{list,create,update,delete}_board, ..._epic, ..._task, plus set_task_state, search_tasks, add_comment, list_tasks_by_status. Each accepts a JSON request body matching the tool schema. Tool definitions exposed at GET /mcp for discovery by MCP clients.
@@ -245,10 +245,10 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** medium
 - **Type:** task
-- **Labels:** backend-v1, openapi
+- **Labels:** backend, openapi
 - **Assignee agent:** (none)
 - **Description (full):**
-  Uses github.com/antimatter-studios/go-oapifly to scan handlers + struct tags and produce openapi.json at build time. Available at runtime via GET /api/v1/openapi.json, and committed to backend-v1/openapi.json. 37 paths, 95 schemas covered. Means no hand-maintained spec drift.
+  Uses github.com/antimatter-studios/go-oapifly to scan handlers + struct tags and produce openapi.json at build time. Available at runtime via GET /api/v1/openapi.json, and committed to backend/openapi.json. 37 paths, 95 schemas covered. Means no hand-maintained spec drift.
 - **Comments (if any):** (none)
 - **Suggested category mapping:** api
 - **What this card claims to track:** Auto-generation of OpenAPI 3.0 spec from Go handler/struct annotations using go-oapifly, served at /api/v1/openapi.json.
@@ -259,7 +259,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** medium
 - **Type:** task
-- **Labels:** backend-v1, importer, migration
+- **Labels:** backend, importer, migration
 - **Assignee agent:** (none)
 - **Description (full):**
   One-shot CLI at cmd/import-sqlite. Opens TA's tasks.db read-only (mode=ro URI), reads boards/columns/epics/cards/comments via GORM, UPSERT into Postgres with ON CONFLICT DO NOTHING (idempotent). Preserves IDs, soft-deletes, and the per-board card numbers. Source counts: 6 boards / 28 columns / 17 epics / 311 cards / 165 comments — all imported successfully.
@@ -273,7 +273,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** medium
 - **Type:** task
-- **Labels:** backend-v1, importer, users
+- **Labels:** backend, importer, users
 - **Assignee agent:** (none)
 - **Description (full):**
   Second one-shot CLI at cmd/import-users. Reads from TA's system-user-manager users.db read-only. Preserves IDs (so cards.assignee_id and comments.author_id stay valid post-import). bcrypt-compatible — passwords transfer as-is. Maps TA.role='admin' → TH.is_admin. Skips banned users by default. Bumps users_id_seq after insert to avoid future autoincrement collisions.
@@ -287,7 +287,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** medium
 - **Type:** task
-- **Labels:** backend-v1, events
+- **Labels:** backend, events
 - **Assignee agent:** (none)
 - **Description (full):**
   Stub events.EventEmitter that logs to stdout when cards get assigned or comments are added. Drop-in replacement for the TA-side pluginsdk event bus. Same emit points kept on CreateCard / UpdateCard / CreateComment so future consumers (notifications, agent triggers, activity feed) can subscribe without touching the handlers.
@@ -301,7 +301,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** medium
 - **Type:** task
-- **Labels:** backend-v1, docker, dockerfile
+- **Labels:** backend, docker, dockerfile
 - **Assignee agent:** (none)
 - **Description (full):**
   builder stage: go build of three binaries (taskhauler-backend, taskhauler-import-sqlite, taskhauler-import-users); static-linked CGO for SQLite ones. dev stage: golang:1.26-alpine + air for hot reload (binds source at runtime via Taskfile mount). prod stage: alpine:3.19 with ca-certificates, non-root user, all three binaries in /usr/local/bin/.
@@ -315,10 +315,10 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** medium
 - **Type:** task
-- **Labels:** backend-v1, cors
+- **Labels:** backend, cors
 - **Assignee agent:** (none)
 - **Description (full):**
-  gin-contrib/cors middleware reads CORS_ALLOWED_ORIGINS env (comma-separated). Currently lets taskhauler.localhost, taskhauler-v2.localhost, and localhost:3000 in. Required since v2 frontend lives at a different origin than the API.
+  gin-contrib/cors middleware reads CORS_ALLOWED_ORIGINS env (comma-separated). Currently lets taskhauler.localhost, taskhauler.localhost, and localhost:3000 in. Required since v2 frontend lives at a different origin than the API.
 - **Comments (if any):** (none)
 - **Suggested category mapping:** api
 - **What this card claims to track:** CORS middleware on the backend (env-driven allow-list) so the cross-origin v2 frontend can call /api/v1.
@@ -329,7 +329,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** medium
 - **Type:** bug
-- **Labels:** backend-v1, prefix
+- **Labels:** backend, prefix
 - **Assignee agent:** (none)
 - **Description (full):**
   Original schema had Prefix string with uniqueIndex; the second board ever created without a prefix would hit a 500 because '' collides with itself. Two changes: (1) replace the all-rows unique index with a partial index 'WHERE prefix <> '' AND deleted_at IS NULL', (2) auto-derive a prefix from the board name when none provided ('Infrastructure Platform' → IP, 'Roadmap' → ROAD), with collision-suffix logic ('Bugs and Issues' twice → BI, BI2).
@@ -347,7 +347,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** medium
 - **Type:** task
-- **Labels:** frontend-v2, theme
+- **Labels:** frontend, theme
 - **Assignee agent:** (none)
 - **Description (full):**
   Three palettes scoped under :root[data-theme="day|mono|paper"] in src/index.css. The active theme is set on <html> at boot from localStorage (key taskhauler.theme), defaulting to 'day' on first visit. Switching swaps the entire chrome including fonts (Mono uses JetBrains Mono throughout). Token names: --bg, --surface, --hover, --border, --border-hi, --text, --text-2, --text-3, --accent, --accent-bg, --accent-fg, --red, --amber, --green, --radius.
@@ -361,7 +361,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** low
 - **Type:** task
-- **Labels:** frontend-v2, theme, fonts
+- **Labels:** frontend, theme, fonts
 - **Assignee agent:** (none)
 - **Description (full):**
   <link> tags in index.html load all three from Google Fonts with display=swap. Weights: Inter 400/500/600/700, JetBrains Mono 400/500/700, Geist Mono 400/500/700. Picked per theme via --font-sans / --font-mono CSS variables.
@@ -375,7 +375,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** medium
 - **Type:** task
-- **Labels:** frontend-v2, lib
+- **Labels:** frontend, lib
 - **Assignee agent:** (none)
 - **Description (full):**
   src/lib/time.ts. fmtDue(ts) returns {txt, overdue, soon} — used by KanbanCard, TimelineBar, CardDetail. fmtAgo(ts) returns short relative (12s, 5m, 3h, 2d) — used by Activity rows, presence rows, proposal timestamps. fmtDate(ts) returns absolute date for tooltips and meta strips.
@@ -389,7 +389,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** medium
 - **Type:** task
-- **Labels:** frontend-v2, lib, drag-drop
+- **Labels:** frontend, lib, drag-drop
 - **Assignee agent:** (none)
 - **Description (full):**
   src/lib/positions.ts. Fractional positioning for drag-drop ordering. Returns sensible values for empty/before-first/after-last/between cases (1000-spaced with halving). Used by all 3 drag-enabled views to compute the new position on drop without renumbering everything.
@@ -403,7 +403,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** medium
 - **Type:** task
-- **Labels:** frontend-v2, lib, timeline
+- **Labels:** frontend, lib, timeline
 - **Assignee agent:** (none)
 - **Description (full):**
   src/lib/pack-rows.ts. Given an array of {x, width} items, returns row indices (0-based) so no two items on the same row overlap. Sort by x ascending; for each item find lowest row where previous occupant's right edge ≤ this.x. Used by TimelineView to lay out cards within a lane without manual collision math.
@@ -417,7 +417,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** medium
 - **Type:** task
-- **Labels:** frontend-v2, lib, theme
+- **Labels:** frontend, lib, theme
 - **Assignee agent:** (none)
 - **Description (full):**
   src/lib/theme.ts. applyTheme(name) sets data-theme on <html>. getStoredTheme reads localStorage (key taskhauler.theme), defaults to 'day'. persistTheme writes localStorage. THEMES is exported as ThemeName[] = ['day','mono','paper']. Called from Board.tsx on mount before any UI paints, to avoid flash of wrong theme.
@@ -431,7 +431,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** medium
 - **Type:** task
-- **Labels:** frontend-v2, primitives
+- **Labels:** frontend, primitives
 - **Assignee agent:** (none)
 - **Description (full):**
   Circular avatar with oklch-derived bg/fg using the user's hue (or a deterministic hash from display_name if hue missing). 2-letter initials in the centre. Configurable size (default 22). Used everywhere humans appear: sidebar, top bar, card chrome, comments, activity rows.
@@ -445,7 +445,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** medium
 - **Type:** task
-- **Labels:** frontend-v2, primitives
+- **Labels:** frontend, primitives
 - **Assignee agent:** (none)
 - **Description (full):**
   Hex-clipped via clip-path: polygon(20% 0%, 80% 0%, 100% 50%, 80% 100%, 20% 100%, 0% 50%). Variants: default (#0f172a bg, cyan fg, cyan glow), terminal (amber bg). Cyan ring + glow when working. Single uppercase letter, mono font. Visually distinct from human circles at a glance — central design choice of the v2 redesign.
@@ -459,7 +459,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** medium
 - **Type:** task
-- **Labels:** frontend-v2, primitives
+- **Labels:** frontend, primitives
 - **Assignee agent:** (none)
 - **Description (full):**
   Takes userId or agentName, looks up MOCK_USERS / MOCK_AGENTS, renders the right chip. Supports a 'working' prop that overlays a pulsing green dot. Renders a dashed '?' when neither id is supplied. Used wherever a card or activity row needs to show 'who's assigned'.
@@ -473,7 +473,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** low
 - **Type:** task
-- **Labels:** frontend-v2, primitives, presence
+- **Labels:** frontend, primitives, presence
 - **Assignee agent:** (none)
 - **Description (full):**
   8px circle, absolute positioned bottom-right of parent, with a 1.5px box-shadow ring in --surface for lift. Pulse animation when active (1.6s ease-in-out infinite, opacity 1→0.6, scale 1→1.4). Colors by action: viewing=accent, editing/commenting=amber, working=green.
@@ -487,7 +487,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** low
 - **Type:** task
-- **Labels:** frontend-v2, primitives, presence
+- **Labels:** frontend, primitives, presence
 - **Assignee agent:** (none)
 - **Description (full):**
   Renders first maxShown (default 5) entries with -7px margin overlap. Each avatar has its action-color PresenceDot. Shows '+N' overflow if more, then 'X active' label. Hover tooltips list full names + current actions.
@@ -501,7 +501,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** low
 - **Type:** task
-- **Labels:** frontend-v2, primitives
+- **Labels:** frontend, primitives
 - **Assignee agent:** (none)
 - **Description (full):**
   Low / Medium / High shown as 1/2/3 bars gradiated from --text-3 to --amber. Urgent shown as a solid 8×8 red square. Empty / no priority returns null so callers don't reserve width.
@@ -515,7 +515,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** low
 - **Type:** task
-- **Labels:** frontend-v2, primitives
+- **Labels:** frontend, primitives
 - **Assignee agent:** (none)
 - **Description (full):**
   Color dot in epic.color + short name in a pill. Uses color-mix() for tinted bg so the same component looks like a filled pill on Day/Paper themes and a colored-border outlined chip on Mono — no theme-name prop needed.
@@ -529,7 +529,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** low
 - **Type:** task
-- **Labels:** frontend-v2, primitives
+- **Labels:** frontend, primitives
 - **Assignee agent:** (none)
 - **Description (full):**
   Small mono-font keyboard hint with subtle border + bg from theme vars. Used in TopBar (C, ⌘K), CardDetailPanel (F), FocusModal (Esc).
@@ -543,10 +543,10 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** medium
 - **Type:** task
-- **Labels:** frontend-v2, mocks
+- **Labels:** frontend, mocks
 - **Assignee agent:** (none)
 - **Description (full):**
-  11 files under src/mock/, one per future API endpoint. Each ships with a comment pointing at what real call will replace it. The strategy doc docs/frontend-v2-status.md frames this as 'UI is 100% fidelity now, mocks get swapped for live API as endpoints land — no UI changes needed at that swap.' This is the contract that keeps v2 → v2-with-live-data smooth.
+  11 files under src/mock/, one per future API endpoint. Each ships with a comment pointing at what real call will replace it. The strategy doc docs/frontend-status.md frames this as 'UI is 100% fidelity now, mocks get swapped for live API as endpoints land — no UI changes needed at that swap.' This is the contract that keeps v2 → v2-with-live-data smooth.
 - **Comments (if any):** (none)
 - **Suggested category mapping:** primitives
 - **What this card claims to track:** The src/mock/ contract — 11 mock-data files (one per future API endpoint) that the UI consumes today so the eventual mocks-to-live-API swap requires no UI changes.
@@ -557,7 +557,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** medium
 - **Type:** task
-- **Labels:** frontend-v2, state
+- **Labels:** frontend, state
 - **Assignee agent:** (none)
 - **Description (full):**
   src/stores/boardUIStore.ts. State: view (kanban|timeline|terminal|dispatch), grouping (col|priority|epic|assignee|due), filterAssignee (all|mine|agents), consoleOpen (bool), railTab (console|activity|plans), selectedCardId, focusedCardId, searchQuery. Persists consoleOpen + railTab to localStorage. Other state is transient.
@@ -575,7 +575,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** high
 - **Type:** task
-- **Labels:** frontend-v2, shell
+- **Labels:** frontend, shell
 - **Assignee agent:** (none)
 - **Description (full):**
   src/components/board/Board.tsx. Layout: <BoardSidebar /> | main column (TopBar, FilterRow, AISuggestionStrip, ViewSwitcher) | <BoardRightRail />. On mount: applyTheme(getStoredTheme()) before first paint, fetchBoards() then setActiveBoard(first), fetchBoard(active) on activeBoardId change. Global keyboard handler: F opens FocusModal (if a card is selected), Esc closes it, C and ⌘K are no-op placeholders (don't fire when an input has focus).
@@ -589,7 +589,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** medium
 - **Type:** task
-- **Labels:** frontend-v2, shell, sidebar
+- **Labels:** frontend, shell, sidebar
 - **Assignee agent:** (none)
 - **Description (full):**
   200px wide, full height. Top: 22×22 brand glyph + 'Taskhauler' + chevron-down. Nav rows: Inbox (count MOCK_INBOX=7), My Issues (count = cards.filter(assignee_id==user.id)), AI Suggestions (count = MOCK_SUGGESTIONS.length). Boards section: list from useKanbanStore.boards, active board has surface bg + border + accent color dot. Saved views: 3 hardcoded placeholders. Bottom: current user UserChip + name from useAuthStore.
@@ -603,7 +603,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** high
 - **Type:** task
-- **Labels:** frontend-v2, shell, topbar
+- **Labels:** frontend, shell, topbar
 - **Assignee agent:** (none)
 - **Description (full):**
   44px tall. Left: board name + filter scope + 'N of M' count. Right: PresenceCluster (self + 4 mock collaborators), inline ThemeSwitcher (3 swatches), search pill with ⌘K hint, New Issue button with C hint, Console toggle (solid accent pill when on, outline when off, showing pulsing green dot + 'Console' + working/total agent count).
@@ -617,7 +617,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** medium
 - **Type:** task
-- **Labels:** frontend-v2, shell, filter-row
+- **Labels:** frontend, shell, filter-row
 - **Assignee agent:** (none)
 - **Description (full):**
   40px tall. Group: 5 segments (Status/Priority/Epic/Assignee/Due) updating boardUIStore.grouping. 1px divider. Filter: 3 chips (All/Mine/Agents) updating boardUIStore.filterAssignee; Agents chip has a pulsing green dot when active. View switcher (margin-left:auto): 4 buttons with lucide icons (Columns3, GanttChart, Terminal, Network) updating boardUIStore.view.
@@ -631,7 +631,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** low
 - **Type:** task
-- **Labels:** frontend-v2, shell, ai
+- **Labels:** frontend, shell, ai
 - **Assignee agent:** (none)
 - **Description (full):**
   28px tall, linear-gradient from --accent-bg to --bg. Sparkles icon + '{N} AI suggestions' + ' — ' + first suggestion text + Apply / Dismiss buttons. Hidden when MOCK_SUGGESTIONS.length === 0 (always populated today). Apply / Dismiss fire alert() until proposals/suggestions endpoint exists.
@@ -645,7 +645,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** medium
 - **Type:** task
-- **Labels:** frontend-v2, shell, rail
+- **Labels:** frontend, shell, rail
 - **Assignee agent:** (none)
 - **Description (full):**
   Visible when consoleOpen || selectedCardId. Shows CardDetailPanel for the selected card (with a '← Back to console' link at top when consoleOpen too — lets users deselect without closing the rail). Otherwise renders RailTabs + active panel (Console / Activity / Plans).
@@ -663,7 +663,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** high
 - **Type:** task
-- **Labels:** frontend-v2, views, cards
+- **Labels:** frontend, views, cards
 - **Assignee agent:** (none)
 - **Description (full):**
   src/components/board/cards/KanbanCard.tsx. --surface bg, 1px --border, --radius rounded, 8/10 padding. Top row: PriorityIndicator + HAUL-N (mono) + BUG label + PresenceCluster (max 3, size 14) + comment count + AssigneeChip (size 18, working dot if agent live). Title: 12px medium, 2-line clamp. Meta: EpicChip + estimate + due. 2px progress bar at bottom when partial. Selected = accent border + 3px ring. Hover = translateY(-1px). Draggable via @dnd-kit useDraggable.
@@ -677,7 +677,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** high
 - **Type:** task
-- **Labels:** frontend-v2, views, grouping, drag-drop
+- **Labels:** frontend, views, grouping, drag-drop
 - **Assignee agent:** (none)
 - **Description (full):**
   Client-side grouping over real card data (no server-side grouping needed). Modes: col (4 board columns), priority (Urgent/High/Med/Low, only populated), epic (one per epic + 'No epic'), assignee (per unique assignee + 'Unassigned', agents grouped before users), due (Overdue/Today/This week/Later/No due date). DndContext + per-column-droppable. Drop handler updates the right card field per grouping: column_id / priority / epic_id / assignee_id|assignee_agent / due_date. Position computed via positionAfter / positionBefore.
@@ -691,7 +691,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** medium
 - **Type:** task
-- **Labels:** frontend-v2, views, card-detail
+- **Labels:** frontend, views, card-detail
 - **Assignee agent:** (none)
 - **Description (full):**
   44px header: HAUL-N (left) + Focus button with F hint + Close (right). Body: title (h3 16px), 2-column metadata grid (80px labels / 1fr values: Status, Priority, Assignee, Epic, Due, Estimate, Labels), Agent activity section filtered to this card from MOCK_ACTIVITY, AI suggested section (mock). Close → selectedCardId=null. Focus → focusedCardId=cardId.
@@ -709,7 +709,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** medium
 - **Type:** task
-- **Labels:** frontend-v2, rail
+- **Labels:** frontend, rail
 - **Assignee agent:** (none)
 - **Description (full):**
   Header at top of BoardRightRail when no card selected. Each tab shows label + count badge (Console = working agents from MOCK_TELEMETRY, Activity = MOCK_ACTIVITY.length, Plans = pending proposals count). Active tab has --bg + inset border-hi shadow. Click updates boardUIStore.railTab (persisted to localStorage).
@@ -723,7 +723,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** In Progress
 - **Priority:** medium
 - **Type:** task
-- **Labels:** frontend-v2, rail, mocked
+- **Labels:** frontend, rail, mocked
 - **Assignee agent:** @backend-builder
 - **Description (full):**
   Two sections (active now / idle). Each presence row: 26px avatar with action-colored pulsing dot + name (mono for agents) + USER/AGENT pill + 'time ago' + chevron (agents). Action line: verb (viewing/editing/working) in action color + HAUL-N chip + truncated title. Working agents show load% + tok/m + load bar (green ≤30% / accent 30-70% / amber >70%) and, when expanded, a 4-line mono transcript cycling every 3.2s from MOCK_TRANSCRIPTS. Bottom CTA: dashed-border '+ Invite people or hauler agents' button. Converts to ✅ once /agents/telemetry endpoint exists.
@@ -737,7 +737,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** In Progress
 - **Priority:** medium
 - **Type:** task
-- **Labels:** frontend-v2, rail, mocked
+- **Labels:** frontend, rail, mocked
 - **Assignee agent:** @backend-builder
 - **Description (full):**
   Top: filter chips (All/Agents/Comments/Ships). Body: events sorted by .at desc, grouped into 3 buckets (Just now <0.5h / Earlier today 0.5-8h / Yesterday+ >8h). Each ActivityRow: actor avatar (zIndex 1 over a 1px vertical connector line at x=24) + name + kind pill (color-coded AGENT=accent, MOVE=green, SHIP=green, ASSIGN=amber, PRIORITY=red, etc.) + time ago + event text + optional card chip. Newest event in Just-now bucket gets fade-in 320ms animation. Converts to ✅ once /boards/:id/activity endpoint exists.
@@ -751,7 +751,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** In Progress
 - **Priority:** medium
 - **Type:** task
-- **Labels:** frontend-v2, rail, mocked, novel
+- **Labels:** frontend, rail, mocked, novel
 - **Assignee agent:** @backend-builder
 - **Description (full):**
   Two sections (pending / recently decided). Each ProposalCard (click to expand): proposer avatar (with 'AI' badge for agent proposers) + name + 'proposes' + time ago + title + status pill + action count + confidence (for agent proposers). Expanded: summary + action list in mono bordered box (PRIORITY: set X priority Y → Z / MOVE: move X Y → Z / LABEL / SPLIT / PING / ARCHIVE / ASSIGN / DUE), then Approve/Reject/Edit buttons (pending) or 'Approved by ...'/'Rejected — reason' (decided). Bottom: solid accent '+ Propose a plan' button. All action buttons fire alert() stubs until proposals domain exists.
@@ -769,7 +769,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** medium
 - **Type:** task
-- **Labels:** frontend-v2, views
+- **Labels:** frontend, views
 - **Assignee agent:** (none)
 - **Description (full):**
   200px lane labels (sticky horizontal). Day header (44px, sticky vertical): today-2 to today+14, 64px per cell, weekday + day number; today cell has --accent-bg; weekends have --bg. Lane row auto-height (rows*36+16, min 58). 2px yellow today-line at x position. Cards positioned absolutely: x = day_offset * 64 - cardWidth (right edge = due), width = clamp(80, estimate*14, 200). packRows() handles row collision. Lane label: AssigneeChip + name + sub + working green dot + workload bar capped at 21pt.
@@ -783,7 +783,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** medium
 - **Type:** task
-- **Labels:** frontend-v2, views, timeline, drag-drop
+- **Labels:** frontend, views, timeline, drag-drop
 - **Assignee agent:** (none)
 - **Description (full):**
   DndContext per view + useDraggable on TimelineBar + useDroppable per lane track. On drop: read pointer x (activatorEvent.clientX + delta.x), subtract lane element's bounding-rect left, floor / 64 to compute day offset → new due_date. Also pick up the target lane's assignee id from droppable.data. Single PUT /cards/:cid call updates both assignee + due_date.
@@ -797,7 +797,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** medium
 - **Type:** task
-- **Labels:** frontend-v2, views, cards
+- **Labels:** frontend, views, cards
 - **Assignee agent:** (none)
 - **Description (full):**
   Height 32, padding 3/6/3/9. 3px left stripe in epic color (or asphalt if no epic). 5×5 pulsing green dot for working agents. HAUL-N (mono small) + title (truncated). P0 badge top-right if priority=urgent. Border red if overdue, epic color otherwise. Selected: 3px accent ring. Hover: width/border transitions; click selects.
@@ -811,7 +811,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** medium
 - **Type:** task
-- **Labels:** frontend-v2, views
+- **Labels:** frontend, views
 - **Assignee agent:** (none)
 - **Description (full):**
   Top prompt: '$ board --list --group=column --sort=priority,due' with green $. Sections per column: '┌── COLUMN_NAME [count] ──' header + dashed line spacer (1px dashed bottom border on a flex-1 span, not repeated ─ chars which break at narrow widths). Each row: '│' prefix + HAUL-N (70px mono) + [Pn] (28px color-coded) + [TSK]/[BUG] (34px) + title (flex 1, truncated) + assignee (@agent green / ~user accent) + ● live (if working) + estimate (right) + due (~today / !overdue, color by urgency). Bottom: '$ _' with 8×14 blinking accent cursor (animation: blink 1s steps(1,end) infinite).
@@ -825,7 +825,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** medium
 - **Type:** task
-- **Labels:** frontend-v2, views
+- **Labels:** frontend, views
 - **Assignee agent:** (none)
 - **Description (full):**
   Fleet bar (76px, horizontal scroll): 'FLEET' label + agent count + one DispatchAgentTile per MOCK_AGENT. 4 sections below (horizontal, equal width): Hot (red, overdue+urgent, read-only filter), In Flight (accent, c2), Ready (green, c3), Queue (text-3, c1). Each section uses the SAME KanbanCard component as Kanban view. Drag-drop: In Flight / Ready / Queue accept drops (update column_id); Hot is read-only.
@@ -839,7 +839,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** low
 - **Type:** task
-- **Labels:** frontend-v2, views, cards
+- **Labels:** frontend, views, cards
 - **Assignee agent:** (none)
 - **Description (full):**
   Working: --accent-bg + 3px accent left stripe. Idle: --bg. Top: AgentChip + @name + plugin (small). LIVE / IDLE pill top-right. 2-line: HAUL-N + truncated title (or agent.description if idle). Bottom: 3px load bar + load % label.
@@ -853,7 +853,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** low
 - **Type:** task
-- **Labels:** frontend-v2, views, cards
+- **Labels:** frontend, views, cards
 - **Assignee agent:** (none)
 - **Description (full):**
   Card-as-row: '│' + fixed-width columns for HAUL-N / priority / type / title / assignee / live / estimate / due. Click → setSelectedCardId. Selected row: --accent-bg + 2px left border accent.
@@ -871,7 +871,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** medium
 - **Type:** task
-- **Labels:** frontend-v2, overlays
+- **Labels:** frontend, overlays
 - **Assignee agent:** (none)
 - **Description (full):**
   Trigger: F key (when a card is selected) OR Focus button in CardDetailPanel. Rendered via createPortal to document.body, z-index 1000. Backdrop: --bg + f0 alpha + backdrop-filter: blur(8px). Click backdrop or Esc → setFocusedCardId(null). Inner modal: width min(720px, 92vw), max-height 92vh, --surface bg, 14px border-radius, padding 32/36/28, shadow 0 30px 80px rgba(0,0,0,0.25).
@@ -885,7 +885,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** medium
 - **Type:** task
-- **Labels:** frontend-v2, overlays
+- **Labels:** frontend, overlays
 - **Assignee agent:** (none)
 - **Description (full):**
   Meta strip (11px): HAUL-N (mono accent) + BUG badge + EpicChip + priority + due + 'Esc · close'. Title (h1 32px). Assignee row (28px AssigneeChip + 'working alongside you · {plugin}' for working agents + Mark shipped button which writes to Done column via useKanbanStore.updateCard). Description paragraph. Progress card (big done/total + bar + pct). Subtasks list — checkbox + text (strikethrough when done).
@@ -899,7 +899,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** In Progress
 - **Priority:** low
 - **Type:** task
-- **Labels:** frontend-v2, overlays, localStorage, mocked
+- **Labels:** frontend, overlays, localStorage, mocked
 - **Assignee agent:** @backend-builder
 - **Description (full):**
   Per-card key 'taskhauler.subtasks.<cardId>'. Initialized from MOCK_SUBTASKS[realCardId] (resolved via the mock-card-N bridge) the first time a card is opened in Focus. Toggles write through to localStorage immediately. Won't sync across browsers or users — that's the limitation that the subtasks domain (Phase 8) fixes.
@@ -917,7 +917,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** In Progress
 - **Priority:** medium
 - **Type:** task
-- **Labels:** frontend-v2, presence, mocked
+- **Labels:** frontend, presence, mocked
 - **Assignee agent:** @backend-builder
 - **Description (full):**
   PresenceCluster on KanbanCard (max 3, size 14) — shows who's currently viewing/editing that card. Today it's a fixed mapping from MOCK_PRESENCE.card_id (mock-card-N) → real card via sort-by-number. Excludes the assignee if they're already shown elsewhere on the card. Tooltips list names + actions. Converts to ✅ when realtime presence (WebSocket or SSE) exists.
@@ -931,7 +931,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** In Progress
 - **Priority:** medium
 - **Type:** task
-- **Labels:** frontend-v2, presence, mocked
+- **Labels:** frontend, presence, mocked
 - **Assignee agent:** @backend-builder
 - **Description (full):**
   PresenceCluster in BoardTopBar (max 5, size 24, with 'X active' label). Self comes from useAuthStore.user (real). Other entries come from MOCK_PRESENCE for now. Pulsing action-color dots per spec. Converts to ✅ when realtime presence exists.
@@ -945,7 +945,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Backlog
 - **Priority:** low
 - **Type:** task
-- **Labels:** frontend-v2, presence, blocked
+- **Labels:** frontend, presence, blocked
 - **Assignee agent:** @backend-builder
 - **Description (full):**
   Throttled (~1/sec) emit on: page mount ({action:'viewing', card_id:selectedCardId}), selectedCardId change, focus into description/comment text inputs ({action:'editing'}). On disconnect emit {type:'leave'}. No-op currently — requires the WebSocket endpoint.
@@ -963,7 +963,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** low
 - **Type:** task
-- **Labels:** frontend-v2, polish, shortcuts
+- **Labels:** frontend, polish, shortcuts
 - **Assignee agent:** (none)
 - **Description (full):**
   Wired in Board.tsx's keydown handler. F opens FocusModal when a card is selected and modal isn't already open. Esc closes the modal. Both are no-op when an input/textarea/contenteditable has focus.
@@ -977,7 +977,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Backlog
 - **Priority:** low
 - **Type:** task
-- **Labels:** frontend-v2, polish, shortcuts
+- **Labels:** frontend, polish, shortcuts
 - **Assignee agent:** (none)
 - **Description (full):**
   Currently log to console as placeholders. C should open a new-issue dialog (reuse CardDetailPanel's edit form, or a dedicated modal). ⌘K should open a fuzzy search modal scoped to the active board's cards. J/K should navigate the focused card up/down in the current view. ? should show a help overlay listing all shortcuts.
@@ -991,7 +991,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** low
 - **Type:** task
-- **Labels:** frontend-v2, polish, persistence
+- **Labels:** frontend, polish, persistence
 - **Assignee agent:** (none)
 - **Description (full):**
   All four already persisted under taskhauler.* keys. Restored on app boot before first render where it matters (theme).
@@ -1005,7 +1005,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Backlog
 - **Priority:** low
 - **Type:** task
-- **Labels:** frontend-v2, polish, persistence, routing
+- **Labels:** frontend, polish, persistence, routing
 - **Assignee agent:** (none)
 - **Description (full):**
   Today only the active board name is in the URL hash (legacy v1 pattern). Sync the rest of boardUIStore to URL query params so a shared link reproduces the exact state. On URL change (back/forward), re-read state into the store. Use the existing useEffect that already watches the hash.
@@ -1019,7 +1019,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Done
 - **Priority:** low
 - **Type:** task
-- **Labels:** frontend-v2, polish, animations
+- **Labels:** frontend, polish, animations
 - **Assignee agent:** (none)
 - **Description (full):**
   @keyframes defined in src/index.css: presence-pulse (1.6s ease-in-out infinite, opacity+scale), fade-in (320ms, opacity+translateY), blink (1s steps(1,end) infinite, opacity). Used by presence dots, freshest activity row, Terminal cursor. Plus hover transitions on KanbanCard (120ms shadow + translateY -1px) and progress bar fill (240ms width).
@@ -1033,7 +1033,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Backlog
 - **Priority:** medium
 - **Type:** task
-- **Labels:** frontend-v2, polish, a11y
+- **Labels:** frontend, polish, a11y
 - **Assignee agent:** (none)
 - **Description (full):**
   All interactives are <button> (not <div>); add aria-labels on icon-only buttons; aria-current on active sidebar/segment; aria-expanded on collapsible rows (proposal cards, presence rows); focus-visible on all controls; screen-reader announcement when card detail opens (use sr-only div with aria-live=polite).
@@ -1047,7 +1047,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Backlog
 - **Priority:** medium
 - **Type:** task
-- **Labels:** frontend-v2, polish, errors
+- **Labels:** frontend, polish, errors
 - **Assignee agent:** (none)
 - **Description (full):**
   Today rail action buttons fire alert() — replace with a proper toast component (could reuse shadcn's sonner if we add it). Add optimistic-revert pattern for card mutations: snapshot pre-update state, apply optimistically, on API failure restore + show error toast. WebSocket disconnect indicator next to presence cluster ('Reconnecting...'). Stale agent telemetry (>30s) greys out the live dot.
@@ -1061,7 +1061,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Backlog
 - **Priority:** low
 - **Type:** task
-- **Labels:** frontend-v2, polish, empty-states
+- **Labels:** frontend, polish, empty-states
 - **Assignee agent:** (none)
 - **Description (full):**
   Today the rail panels are always populated thanks to mocks. Once real endpoints exist, design empty-state copy for first-time users: 'No agents reporting yet — connect one to get started', 'No activity yet on this board', 'No plans pending — drag a card to In Progress to propose...'. Also: no-cards-on-board → CTA, board not found → 'pick a board from the sidebar'.
@@ -1079,7 +1079,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Backlog
 - **Priority:** high
 - **Type:** task
-- **Labels:** backend-v1, backend-gap
+- **Labels:** backend, backend-gap
 - **Assignee agent:** @backend-builder
 - **Description (full):**
   Smallest gap, biggest UX unblock. Returns [{id, email, display_name, is_admin, created_at}]. Filter to non-service-account rows. Probably admin-only OR scoped to 'users who have a card on the same board as the caller' to avoid leaking emails. Unblocks: assignee picker autocomplete, sidebar user list, CardDetail metadata, presence cluster names. ~30 min implementation since the users table already exists.
@@ -1093,7 +1093,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Backlog
 - **Priority:** medium
 - **Type:** task
-- **Labels:** backend-v1, backend-gap, perf
+- **Labels:** backend, backend-gap, perf
 - **Assignee agent:** @backend-builder
 - **Description (full):**
   Denormalise on read: either a subquery on the cards list query, or a denormalised count column updated on comment insert/delete. Lets KanbanCard show the comment indicator without N+1 fetches. Tiny change.
@@ -1107,7 +1107,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Backlog
 - **Priority:** medium
 - **Type:** task
-- **Labels:** backend-v1, backend-gap, schema
+- **Labels:** backend, backend-gap, schema
 - **Assignee agent:** @backend-builder
 - **Description (full):**
   Today: frontend mocks these from card.id hash. With real fields: Timeline workload bars compute from real estimates instead of a constant; FocusModal progress card reads from server (denormalised from subtasks); KanbanCard can show a blocked-icon. Migration: ALTER TABLE cards ADD COLUMN estimate INT, progress FLOAT, blocked_by TEXT[]. Update handlers to accept + return them.
@@ -1121,7 +1121,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Backlog
 - **Priority:** medium
 - **Type:** task
-- **Labels:** backend-v1, backend-gap, domain
+- **Labels:** backend, backend-gap, domain
 - **Assignee agent:** @backend-builder
 - **Description (full):**
   Subtask {id, card_id (FK), text, done (bool), position (float), created_at, updated_at}. Endpoints: GET POST under /cards/:id/subtasks, PATCH DELETE on /subtasks/:id. On insert/delete: recompute card.progress (done/total) and write it back to cards (denormalised). Converts FocusModal subtasks from localStorage → server-synced across browsers/users. ~half day.
@@ -1135,10 +1135,10 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Backlog
 - **Priority:** medium
 - **Type:** task
-- **Labels:** backend-v1, backend-gap, agents
+- **Labels:** backend, backend-gap, agents
 - **Assignee agent:** @backend-builder
 - **Description (full):**
-  Returns [{name, type, plugin, model, description}]. Open question: who owns the agents table? Options: (a) backend-v1 owns it with admin CRUD, (b) agents self-register via POST /api/v1/agents at runtime, (c) federate from teamagentica's existing infra-agent-registry. Pick before building. Unblocks: assignee picker shows real agents, Dispatch fleet bar populates from real data, ConsoleRail has real agents to show telemetry for.
+  Returns [{name, type, plugin, model, description}]. Open question: who owns the agents table? Options: (a) backend owns it with admin CRUD, (b) agents self-register via POST /api/v1/agents at runtime, (c) federate from teamagentica's existing infra-agent-registry. Pick before building. Unblocks: assignee picker shows real agents, Dispatch fleet bar populates from real data, ConsoleRail has real agents to show telemetry for.
 - **Comments (if any):** (none)
 - **Suggested category mapping:** api
 - **What this card claims to track:** Adding a real Agent registry endpoint (and deciding ownership model) so assignee picker, Dispatch fleet bar, and ConsoleRail can use real agent data.
@@ -1149,7 +1149,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Backlog
 - **Priority:** high
 - **Type:** task
-- **Labels:** backend-v1, backend-gap, activity
+- **Labels:** backend, backend-gap, activity
 - **Assignee agent:** @backend-builder
 - **Description (full):**
   Query: ?since=<ts>&kind=agent,comment&limit=50. Returns ActivityEvent[] newest-first. Kinds: agent / comment / move / assign / create / ship / label / priority. Add activity_events table; emit on every card mutation (already have the emit-points from the events stub). Optional: broadcast via the same WebSocket as presence so ActivityRail can fade-in new events live without polling. Converts ActivityRail mocks → real, plus CardDetail's per-card activity section. ~1 day.
@@ -1163,7 +1163,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Backlog
 - **Priority:** medium
 - **Type:** task
-- **Labels:** backend-v1, backend-gap, agents, runtime
+- **Labels:** backend, backend-gap, agents, runtime
 - **Assignee agent:** @backend-builder
 - **Description (full):**
   GET /agents/telemetry → AgentTelemetry[] (name, status, load, tok, step, current_card_id, last_act). GET /agents/:name/transcript?tail=10 → AgentTranscriptLine[]. The hard part isn't the endpoint — it's getting the agent runtime to emit these events. If using a SDK like LangChain or Claude Agent SDK, hook into its event stream. Optional: GET /agents/stream (SSE) for push instead of poll. Unblocks: ConsoleRail's live agent state, KanbanCard's '● live' indicator on agent-assigned cards.
@@ -1177,7 +1177,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Backlog
 - **Priority:** medium
 - **Type:** task
-- **Labels:** backend-v1, backend-gap, proposals, novel
+- **Labels:** backend, backend-gap, proposals, novel
 - **Assignee agent:** @backend-builder
 - **Description (full):**
   Most novel feature. Tables: proposals + proposal_actions (with kind: priority/move/label/split/ping/archive/assign/due). Endpoints: POST /boards/:id/proposals (anyone), GET ?status=pending, GET /proposals/:id, POST /proposals/:id/approve (board members with edit rights), POST /proposals/:id/reject body:{reason?}, PATCH /proposals/:id (only while pending). On approve: status=executing, apply each action inside a single DB transaction; rollback on any failure with execution_error; success = status=approved + emit activity event. Permissions: agents cannot self-approve their own proposals — humans must. Multi-day.
@@ -1191,7 +1191,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Backlog
 - **Priority:** medium
 - **Type:** task
-- **Labels:** backend-v1, backend-gap, realtime, infra
+- **Labels:** backend, backend-gap, realtime, infra
 - **Assignee agent:** @backend-builder
 - **Description (full):**
   WS /api/v1/boards/:id/presence with snapshot + update + leave messages. Memory-only Map<boardId, Map<sessionId, PresenceEntry>>. TTL each entry 30s; clients heartbeat every 10s. On WS close → broadcast leave. Agents publish presence the same way humans do (when an agent starts on a card, it publishes {action:'working', card_id}). Polling fallback for clients without WS. Requires new infrastructure (Gorilla websocket or similar in backend; reverse proxy must support upgrade). Multi-day.
@@ -1205,7 +1205,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Backlog
 - **Priority:** low
 - **Type:** task
-- **Labels:** backend-v1, backend-gap, ai
+- **Labels:** backend, backend-gap, ai
 - **Assignee agent:** @backend-builder
 - **Description (full):**
   GET /boards/:id/suggestions → top 5 board-wide. GET /cards/:id/suggestions → per-card. POST /suggestions/:id/apply, /:id/dismiss. Generation: an agent computes these on a schedule (hourly) or on events (PR merged → suggest promote to In Review). Cache server-side. Surface in BoardAISuggestionStrip and CardDetailPanel's AI section. Lowest priority because the strip hides when empty (or shows the mock today).
@@ -1219,7 +1219,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Backlog
 - **Priority:** low
 - **Type:** task
-- **Labels:** backend-v1, backend-gap, agents
+- **Labels:** backend, backend-gap, agents
 - **Assignee agent:** @backend-builder
 - **Description (full):**
   Human-friendly one-liner ('Triages new bugs from logs'). Shown in ConsoleRail under idle agents. Trivial — once the agents table exists, just add a column.
@@ -1237,7 +1237,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Backlog
 - **Priority:** medium
 - **Type:** task
-- **Labels:** backend-v1, auth, zitadel-prep
+- **Labels:** backend, auth, zitadel-prep
 - **Assignee agent:** @backend-builder
 - **Description (full):**
   ALTER TABLE users ADD COLUMN external_id TEXT; CREATE UNIQUE INDEX idx_users_external_id ON users (external_id) WHERE external_id IS NOT NULL. Stays NULL for everyone until the ZITADEL migration; afterwards holds the ZITADEL user id. Cheap now, painful to retrofit later. See docs/zitadel.md.
@@ -1251,7 +1251,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Backlog
 - **Priority:** medium
 - **Type:** task
-- **Labels:** backend-v1, auth, zitadel-prep
+- **Labels:** backend, auth, zitadel-prep
 - **Assignee agent:** @backend-builder
 - **Description (full):**
   Wrap the current password-check+JWT-mint in an AuthProvider interface { Authenticate(c *gin.Context) (userID uint, isAdmin bool, err error) }. LocalAuthProvider is today's implementation. OIDCAuthProvider validates ZITADEL tokens against the JWKS and looks up users by external_id. AUTH_PROVIDER env var (local|oidc) picks at startup. Service-account tokens stay unchanged either way. See docs/zitadel.md for migration plan.
@@ -1265,7 +1265,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Backlog
 - **Priority:** low
 - **Type:** task
-- **Labels:** backend-v1, auth, zitadel-prep
+- **Labels:** backend, auth, zitadel-prep
 - **Assignee agent:** @backend-builder
 - **Description (full):**
   Email lives in ZITADEL post-migration. Any code that uses email as a foreign-key surface (instead of users.id) becomes painful to migrate. Sweep the codebase, fix any such queries to use the opaque id instead. Probably zero issues since we've been disciplined, but worth confirming before ZITADEL day.
@@ -1293,7 +1293,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Backlog
 - **Priority:** high
 - **Type:** task
-- **Labels:** backend-v1, auth, zitadel
+- **Labels:** backend, auth, zitadel
 - **Assignee agent:** (none)
 - **Description (full):**
   After ZITADEL is up: cmd/zitadel-migrate Go script that iterates users WHERE external_id IS NULL, calls ZITADEL's ImportHumanUser API (which accepts bcrypt password hashes — no force-reset needed), saves the returned zitadel_user_id into users.external_id. Idempotent. Then flip AUTH_PROVIDER=oidc and the frontend redirect URL.
@@ -1307,7 +1307,7 @@ Board prefix is "TH"; cards numbered TH-1 to TH-99.
 - **Column:** Backlog
 - **Priority:** medium
 - **Type:** task
-- **Labels:** backend-v1, auth, zitadel
+- **Labels:** backend, auth, zitadel
 - **Assignee agent:** (none)
 - **Description (full):**
   Each product is a ZITADEL Project. Users have grants per project. EYED: only Chris has the grant. TA: curated (invite/paid). TH: open (any verified user). Decentrali.se: open. Without a grant, ZITADEL refuses to mint a token for that product — Bob can authenticate but can't even reach EYED's code with a valid token. Defense-in-depth on top of the per-product users table.

@@ -1,7 +1,7 @@
-# `src/mock/` — frontend-v2 mock data
+# `src/mock/` — frontend mock data
 
 This directory holds the **client-side mock data** that powers panels whose
-backing API endpoint doesn't exist yet. It exists so we can ship the full v2
+backing API endpoint doesn't exist yet. It exists so we can ship the full
 design from day one without waiting on backend work.
 
 ## Strategy

@@ -6,9 +6,9 @@ build/
 *.log
 
 # Go
-backend*/taskhauler-backend
-backend*/tmp/
-backend*/.air-tmp/
+backend/taskhauler-backend
+backend/tmp/
+backend/.air-tmp/
 *.test
 *.out
 
@@ -35,4 +35,5 @@ backend/data/
 # OS
 .DS_Store
 Thumbs.db
-frontend-v2/coverage/
+frontend/coverage/
+.history

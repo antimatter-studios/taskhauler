@@ -1,5 +1,5 @@
 // Position helpers for ordered list mutations (cards in a column, columns in a
-// board, etc.). Mirrors the convention used by the v1 KanbanBoard:
+// board, etc.). Mirrors the convention used by the KanbanBoard:
 //
 //   • Empty list                → 1000
 //   • Append after last         → lastPos + 1000

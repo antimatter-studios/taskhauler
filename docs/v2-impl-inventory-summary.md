@@ -2,7 +2,7 @@
 
 ## Totals
 
-- **Entries inventoried:** 59 files (everything in `frontend-v2/src/` plus `index.html`).
+- **Entries inventoried:** 59 files (everything in `frontend/src/` plus `index.html`).
 - Build: clean (`tsc -b && vite build` → exit 0, 1634 modules, 349.5 kB JS, 30.4 kB CSS).
 
 ### Count by category

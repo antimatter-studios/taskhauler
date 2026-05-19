@@ -141,7 +141,7 @@ These three steps are cheap (~half a day total) and let the migration itself be 
    - Issue a service-user API token for each product to call ZITADEL on behalf of its signup forms
 
 2. **Provision identities for existing TaskHauler users.**
-   Write a one-off Go script in `backend-v1/cmd/zitadel-migrate/`:
+   Write a one-off Go script in `backend/cmd/zitadel-migrate/`:
    ```
    for each row in users where external_id is null:
        call ZITADEL ImportHumanUser API
@@ -188,6 +188,6 @@ For solo use with a handful of test accounts: the current local auth is genuinel
 ## Cross-references
 
 - [README.md](../README.md) — project overview, current local auth setup
-- [backend-v1/internal/auth/](../backend-v1/internal/auth/) — current auth implementation that the migration replaces
+- [backend/internal/auth/](../backend/internal/auth/) — current auth implementation that the migration replaces
 - [ZITADEL docs](https://zitadel.com/docs) — upstream documentation
 - [ZITADEL on GitHub](https://github.com/zitadel/zitadel) — Apache 2.0, Go

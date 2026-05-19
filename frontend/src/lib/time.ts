@@ -1,7 +1,7 @@
-// Time formatting helpers used across the v2 UI.
+// Time formatting helpers used across the UI.
 //
 // All functions take Unix timestamps in **milliseconds** (matching the rest of
-// the v2 codebase — see api/types.ts). Pass `Date.now()`-style values, not
+// the codebase — see api/types.ts). Pass `Date.now()`-style values, not
 // seconds.
 
 const MS_PER_DAY = 86_400_000;

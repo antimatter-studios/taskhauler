@@ -2,84 +2,169 @@
 @import "tw-animate-css";
 
 /*
-  Canonical shadcn/ui theming (modern, color-string form).
+  Taskhauler frontend theme system.
 
-  Mechanism:
-    • Light mode:  no `.dark` class on <html>
-    • Dark mode:   add `.dark` class on <html>
-    • Base color:  set `data-theme` attribute on <html>
+  Three themes selected via the `data-theme` attribute on <html>:
+    • day   — cool neutral with indigo accent (default)
+    • mono  — black + amber, terminal aesthetic
+    • paper — warm cream with burnt orange accent
 
-  Each token holds a FULL CSS color string (hsl(...), oklch(...), #abc, etc.),
-  so themes copied from tweakcn / ui.shadcn.com / etc. can be pasted verbatim
-  with no value translation.
+  Token values are taken verbatim from the design spec's "Design tokens"
+  section in docs/design/README.md.
 */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
+  --color-card: var(--surface);
+  --color-card-foreground: var(--text);
+  --color-popover: var(--surface);
+  --color-popover-foreground: var(--text);
+  --color-primary: var(--accent);
+  --color-primary-foreground: var(--accent-fg);
+  --color-secondary: var(--hover);
+  --color-secondary-foreground: var(--text);
+  --color-muted: var(--hover);
+  --color-muted-foreground: var(--text-2);
   --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
+  --color-accent-foreground: var(--accent-fg);
+  --color-destructive: var(--red);
+  --color-destructive-foreground: var(--accent-fg);
   --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --radius: 0.5rem;
+  --color-input: var(--border);
+  --color-ring: var(--accent);
+  --color-text-2: var(--text-2);
+  --color-text-3: var(--text-3);
+  --color-accent-bg: var(--accent-bg);
+  --color-border-hi: var(--border-hi);
+  --color-red: var(--red);
+  --color-amber: var(--amber);
+  --color-green: var(--green);
+  --font-sans: var(--font);
+  --font-mono: var(--mono);
+  --radius: var(--radius);
 }
 
-:root {
-  --background: hsl(0 0% 100%);
-  --foreground: hsl(0 0% 3.9%);
-  --card: hsl(0 0% 100%);
-  --card-foreground: hsl(0 0% 3.9%);
-  --popover: hsl(0 0% 100%);
-  --popover-foreground: hsl(0 0% 3.9%);
-  --primary: hsl(0 0% 9%);
-  --primary-foreground: hsl(0 0% 98%);
-  --secondary: hsl(0 0% 96.1%);
-  --secondary-foreground: hsl(0 0% 9%);
-  --muted: hsl(0 0% 96.1%);
-  --muted-foreground: hsl(0 0% 45.1%);
-  --accent: hsl(0 0% 96.1%);
-  --accent-foreground: hsl(0 0% 9%);
-  --destructive: hsl(0 84.2% 60.2%);
-  --destructive-foreground: hsl(0 0% 98%);
-  --border: hsl(0 0% 89.8%);
-  --input: hsl(0 0% 89.8%);
-  --ring: hsl(0 0% 3.9%);
+/* ── Day (default) ───────────────────────────────────────────────────── */
+:root,
+:root[data-theme="day"] {
+  --bg: #fafaf9;
+  --surface: #ffffff;
+  --hover: #f4f4f3;
+  --border: #e7e5e0;
+  --border-hi: #d6d3cd;
+  --text: #18181b;
+  --text-2: #52525b;
+  --text-3: #a1a1aa;
+  --accent: #5b5bd6;
+  --accent-bg: #eef0ff;
+  --accent-fg: #ffffff;
+  --red: #dc2626;
+  --amber: #f59e0b;
+  --green: #16a34a;
+  --font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: "Geist Mono", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo,
+    Monaco, Consolas, monospace;
+  --radius: 6px;
+
+  /* Elevation tiers (theme-overridable) */
+  --shadow-rest: 0 1px 0 rgba(0, 0, 0, 0.02);
+  --shadow-hover: 0 1px 2px rgba(0, 0, 0, 0.08);
+  --shadow-modal: 0 30px 80px rgba(0, 0, 0, 0.25);
 }
 
-.dark {
-  --background: hsl(0 0% 3.9%);
-  --foreground: hsl(0 0% 98%);
-  --card: hsl(0 0% 3.9%);
-  --card-foreground: hsl(0 0% 98%);
-  --popover: hsl(0 0% 3.9%);
-  --popover-foreground: hsl(0 0% 98%);
-  --primary: hsl(0 0% 98%);
-  --primary-foreground: hsl(0 0% 9%);
-  --secondary: hsl(0 0% 14.9%);
-  --secondary-foreground: hsl(0 0% 98%);
-  --muted: hsl(0 0% 14.9%);
-  --muted-foreground: hsl(0 0% 63.9%);
-  --accent: hsl(0 0% 14.9%);
-  --accent-foreground: hsl(0 0% 98%);
-  --destructive: hsl(0 62.8% 30.6%);
-  --destructive-foreground: hsl(0 0% 98%);
-  --border: hsl(0 0% 14.9%);
-  --input: hsl(0 0% 14.9%);
-  --ring: hsl(0 0% 83.1%);
+/* ── Mono ────────────────────────────────────────────────────────────── */
+:root[data-theme="mono"] {
+  --bg: #0c0c0a;
+  --surface: #15140f;
+  --hover: #1e1c14;
+  --border: #2a2820;
+  --border-hi: #3b3826;
+  --text: #e8d9b0;
+  --text-2: #a89770;
+  --text-3: #6b6044;
+  --accent: #facc15;
+  --accent-bg: rgba(250, 204, 21, 0.10);
+  --accent-fg: #1c1917;
+  --red: #f87171;
+  --amber: #fbbf24;
+  --green: #84cc16;
+  --font: "JetBrains Mono", "Geist Mono", ui-monospace, SFMono-Regular, Menlo,
+    Monaco, Consolas, monospace;
+  --mono: "JetBrains Mono", "Geist Mono", ui-monospace, SFMono-Regular, Menlo,
+    Monaco, Consolas, monospace;
+  --radius: 2px;
+
+  /* Mono drops shadows in favor of 1px solid borders */
+  --shadow-rest: none;
+  --shadow-hover: none;
+  --shadow-modal: 0 30px 80px rgba(0, 0, 0, 0.6);
 }
+
+/* ── Paper ───────────────────────────────────────────────────────────── */
+:root[data-theme="paper"] {
+  --bg: #f5f0e2;
+  --surface: #fbf7e9;
+  --hover: #ede6cf;
+  --border: #d4cab2;
+  --border-hi: #b8ad8f;
+  --text: #2a251c;
+  --text-2: #5e574a;
+  --text-3: #9a8f78;
+  --accent: #9a3412;
+  --accent-bg: #fef0e2;
+  --accent-fg: #ffffff;
+  --red: #b91c1c;
+  --amber: #a16207;
+  --green: #65a30d;
+  --font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: "Geist Mono", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo,
+    Monaco, Consolas, monospace;
+  --radius: 4px;
+
+  --shadow-rest: 0 1px 0 rgba(0, 0, 0, 0.03);
+  --shadow-hover: 0 1px 2px rgba(0, 0, 0, 0.10);
+  --shadow-modal: 0 30px 80px rgba(0, 0, 0, 0.20);
+}
+
+/* ── Animations ──────────────────────────────────────────────────────── */
+
+@keyframes presence-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.4);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+/* ── Base layout ─────────────────────────────────────────────────────── */
 
 @layer base {
   *,
@@ -88,10 +173,6 @@
   ::backdrop,
   ::file-selector-button {
     border-color: var(--border);
-  }
-  body {
-    background-color: var(--background);
-    color: var(--foreground);
   }
 }
 
@@ -108,9 +189,10 @@ body {
 }
 
 body {
-  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  font-size: 14px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 13px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -132,11 +214,10 @@ body {
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--muted-foreground);
-  opacity: 0.4;
+  background: var(--border-hi);
 }
 
 ::selection {
-  background: var(--primary);
-  color: var(--primary-foreground);
+  background: var(--accent);
+  color: var(--accent-fg);
 }

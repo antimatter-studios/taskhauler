@@ -2,9 +2,9 @@
 
 Format: `TH-N | Epic | Column | claim summary`
 
-TH-1  | Platform / Infrastructure          | Done       | Extraction of TA tool-task-tracker plugin into standalone monorepo (backend-v1/ + frontend/ + frontend-v2/ + website/)
+TH-1  | Platform / Infrastructure          | Done       | Extraction of TA tool-task-tracker plugin into standalone monorepo (backend/ + frontend/ + website/)
 TH-2  | Platform / Infrastructure          | Done       | Version-per-service deployment pattern (each API version its own deployable, DDT routes by /api/vN)
-TH-3  | Platform / Infrastructure          | Done       | DDT reverse-proxy routing for *.localhost (taskhauler / taskhauler-v2 / marketing.taskhauler / /api/v1)
+TH-3  | Platform / Infrastructure          | Done       | DDT reverse-proxy routing for *.localhost (taskhauler / marketing.taskhauler / /api/v1)
 TH-4  | Platform / Infrastructure          | Done       | Root Taskfile orchestrating raw `docker run` (no docker-compose) for dev/prod/db/import/openapi
 TH-5  | Platform / Infrastructure          | Done       | Docker Desktop compose-style grouping via com.docker.compose.project + .service labels
 TH-6  | Platform / Infrastructure          | Backlog    | Production deployment to taskhauler.antimatter-studios.com (host/TLS/DNS/DB/logs/observability)

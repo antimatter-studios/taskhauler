@@ -1,6 +1,6 @@
 ---
 name: taskhauler
-description: Drive the Taskhauler API (boards, columns, epics, cards, comments, service accounts). Use whenever the user asks to create, list, update, move, comment on, or delete Taskhauler boards/cards/etc., or wants to automate interaction with the Task Hauler board itself. Knows the auth flow, the endpoint shapes, the mock-card-N bridge, and the URL conventions (taskhauler-v2.localhost/<PREFIX>/<num>).
+description: Drive the Taskhauler API (boards, columns, epics, cards, comments, service accounts). Use whenever the user asks to create, list, update, move, comment on, or delete Taskhauler boards/cards/etc., or wants to automate interaction with the Task Hauler board itself. Knows the auth flow, the endpoint shapes, the mock-card-N bridge, and the URL conventions (taskhauler.localhost/<PREFIX>/<num>).
 ---
 
 # Taskhauler skill
@@ -169,15 +169,15 @@ The token is shown **once** at issuance and is unrecoverable — store it immedi
 
 ## URL conventions
 
-The v2 frontend uses path-based routing. URLs are shareable:
+The frontend uses path-based routing. URLs are shareable:
 
-- `http://taskhauler-v2.localhost/` → root, shows first board
-- `http://taskhauler-v2.localhost/<PREFIX>` → board with that prefix
-- `http://taskhauler-v2.localhost/<PREFIX>/<num>` → board, card #num selected
+- `http://taskhauler.localhost/` → root, shows first board
+- `http://taskhauler.localhost/<PREFIX>` → board with that prefix
+- `http://taskhauler.localhost/<PREFIX>/<num>` → board, card #num selected
 
 Examples:
-- `http://taskhauler-v2.localhost/TH/100` → opens the Task Hauler board, selects TH-100
-- `http://taskhauler-v2.localhost/V2/45` → opens the V2 board, selects V2-45
+- `http://taskhauler.localhost/TH/100` → opens the Task Hauler board, selects TH-100
+- `http://taskhauler.localhost/V2/45` → opens the V2 board, selects V2-45
 
 The trailing segment is parsed loosely — `/TH/100` and `/TH/TH-100` both work (regex extracts the digits).
 
@@ -291,7 +291,7 @@ Server-side LIKE on title + description + labels. Case-insensitive when running 
 
 ## Mock-card-N bridge (frontend-specific)
 
-The v2 frontend's `src/mock/` files reference cards by placeholder strings like `mock-card-1`, `mock-card-2`, etc. These are resolved at render time to the Nth real card sorted by `number`. If you're writing skill code that touches the mock-data layer, use the resolver in `frontend-v2/src/components/board/rail/CardDetailPanel.tsx` (or copy it).
+The frontend's `src/mock/` files reference cards by placeholder strings like `mock-card-1`, `mock-card-2`, etc. These are resolved at render time to the Nth real card sorted by `number`. If you're writing skill code that touches the mock-data layer, use the resolver in `frontend/src/components/board/rail/CardDetailPanel.tsx` (or copy it).
 
 When the corresponding real API endpoints exist (TH-76 activity feed, TH-80 suggestions, etc.), this bridge gets removed and consumers read real `card_id`s.
 
@@ -340,7 +340,7 @@ The most common errors:
 - **403** — endpoint requires admin (service-accounts/*).
 - **404** — entity not found (wrong id, soft-deleted, etc.).
 - **400** — request body validation failed; the `error` message names the field.
-- **500** — server error; usually a constraint violation. Common one: trying to create a second board with an empty/duplicate prefix → that's [TH-20](http://taskhauler-v2.localhost/TH/20) but only on legacy schema.
+- **500** — server error; usually a constraint violation. Common one: trying to create a second board with an empty/duplicate prefix → that's [TH-20](http://taskhauler.localhost/TH/20) but only on legacy schema.
 
 `curl -sf` exits non-zero on 4xx/5xx — use that for error handling. For more detail, drop the `-f` and inspect the body.
 
@@ -354,8 +354,8 @@ The most common errors:
 
 ## Anchors
 
-- Backend source: `backend-v1/internal/handlers/handlers.go`, `internal/auth/`, `internal/storage/`
-- OpenAPI spec: `backend-v1/openapi.json` (37 paths, 95 schemas)
-- Frontend API client: `frontend-v2/src/api/client.ts` (TypeScript reference impl)
+- Backend source: `backend/internal/handlers/handlers.go`, `internal/auth/`, `internal/storage/`
+- OpenAPI spec: `backend/openapi.json` (37 paths, 95 schemas)
+- Frontend API client: `frontend/src/api/client.ts` (TypeScript reference impl)
 - Task Hauler board id: `aa4c87b6-bde7-4394-9db5-f59325e3aca0` (prefix `TH`)
 - Repo: https://github.com/antimatter-studios/taskhauler

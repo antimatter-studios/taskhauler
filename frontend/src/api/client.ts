@@ -19,7 +19,12 @@ import type {
 
 const TOKEN_KEY = "taskhauler_token";
 const REFRESH_KEY = "taskhauler_refresh_token";
-const API_BASE = "/api/v1";
+// Full URL of the API. Configured as an absolute URL so that dev hits on raw
+// localhost:3000 (which would otherwise need the vite proxy) and any future
+// cross-origin deployments both work without code changes.
+const API_BASE =
+  (import.meta.env.VITE_API_BASE_URL as string | undefined) ??
+  "http://taskhauler.localhost/api/v1";
 
 function getToken(): string | null {
   try { return localStorage.getItem(TOKEN_KEY); } catch { return null; }
@@ -219,7 +224,7 @@ const auth = {
   isAuthenticated: () => Boolean(getToken()),
 };
 
-// ── Users (optional — may not exist in v1 backend) ──────────────────────────
+// ── Users (optional — may not exist in backend yet) ────────────────────────
 
 const users = {
   listUsers: () => http.get<UserDetails[]>(`/users`),
