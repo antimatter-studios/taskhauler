@@ -1,10 +1,14 @@
 # taskhauler
 
+![Taskhauler kanban board](docs/screenshots/01-kanban.png)
+
 A standalone task tracker. Deployable on its own, usable by humans, drivable by agents as first-class clients via REST, MCP, and packaged skills.
 
 > Status: in-progress build. Source code lives in this monorepo. Design notes below are still being refined as the implementation lands.
 
-**Repository:** https://github.com/antimatter-studios/taskhauler
+**Links:**
+- Repository — https://github.com/antimatter-studios/taskhauler
+- Project site (GitHub Pages) — https://antimatter-studios.github.io/taskhauler/
 
 ## Layout
 
@@ -146,7 +150,7 @@ A built-in MCP server at `/api/v1/mcp/*` exposes the core operations as tool end
 - `POST /mcp/list_boards` · `create_board` · `rename_board` · `delete_board`
 - `POST /mcp/list_epics` · `create_epic` · `update_epic` · `delete_epic`
 - `POST /mcp/list_tasks` · `list_tasks_by_status` · `create_task` · `update_task` · `set_task_state` · `search_tasks` · `add_comment`
-- `GET /mcp` returns the tool manifest
+- `GET /api/v1/mcp` returns the tool manifest
 
 Auth via the same Bearer tokens as REST (JWT for users, `tha_*` for service accounts). The MCP server is a thin adapter over the storage layer — same source of truth as REST.
 
