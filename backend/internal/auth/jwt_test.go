@@ -2,6 +2,7 @@ package auth
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -106,14 +107,22 @@ func TestParseInvalidSignature_Fails(t *testing.T) {
 	issuer := NewIssuer(testSecret)
 	tok, err := issuer.IssueAccess(testUser())
 	require.NoError(t, err)
-	// Flip the last byte of the signature.
-	tampered := tok[:len(tok)-1]
-	if tok[len(tok)-1] == 'A' {
-		tampered += "B"
+	// Flip a char near the start of the signature segment. The LAST
+	// char of a base64url-encoded HMAC-SHA256 signature carries only
+	// 2 significant bits — its other 4 bits are alignment padding, so
+	// mutating it can be a no-op on the decoded signature and the
+	// tampering goes undetected.
+	dot := strings.LastIndex(tok, ".")
+	require.Positive(t, dot)
+	require.Greater(t, len(tok), dot+1, "token has empty signature segment")
+	sig := []byte(tok)
+	first := dot + 1
+	if sig[first] == 'A' {
+		sig[first] = 'B'
 	} else {
-		tampered += "A"
+		sig[first] = 'A'
 	}
-	_, err = issuer.Parse(tampered)
+	_, err = issuer.Parse(string(sig))
 	assert.Error(t, err, "tampered signature must be rejected")
 }
 
