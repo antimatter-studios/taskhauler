@@ -1,0 +1,7 @@
+# pnpm 10+ reads project-wide settings from this file. We're not actually a
+# workspace — this is just where `onlyBuiltDependencies` lives (it used to be
+# in package.json's `pnpm` field, which pnpm 10+ ignores).
+#
+# esbuild needs its postinstall to symlink the platform-specific native binary.
+onlyBuiltDependencies:
+  - esbuild

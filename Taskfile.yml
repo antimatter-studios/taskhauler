@@ -520,6 +520,21 @@ tasks:
           -c "go run ./cmd/generate-openapi --out /app/openapi.json"
       - echo "Wrote {{.BACKEND_DIR}}/openapi.json"
 
+  # ── pnpm lockfile management ────────────────────────────────────────────────
+
+  lockfile:regen:
+    desc: Regenerate pnpm-lock.yaml for frontend + website inside linux containers (never run pnpm install on the macOS host — see docs)
+    cmds:
+      - |
+        for dir in frontend website; do
+          echo "→ regenerating $dir/pnpm-lock.yaml"
+          docker run --rm \
+            -v $(pwd)/$dir:/app \
+            -w /app \
+            node:22-alpine \
+            sh -c 'corepack enable && corepack prepare pnpm@latest --activate && pnpm install --lockfile-only'
+        done
+
   # ── Convenience ─────────────────────────────────────────────────────────────
 
   clean:
