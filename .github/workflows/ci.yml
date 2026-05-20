@@ -36,16 +36,19 @@ jobs:
         working-directory: frontend
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          run_install: false
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-      - run: npm ci
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
       - name: typecheck
-        run: npx tsc -b --noEmit
+        run: pnpm exec tsc -b --noEmit
       - name: test
-        run: npm test -- --run
+        run: pnpm test -- --run
 
   website:
     name: website (vitest)
@@ -55,11 +58,14 @@ jobs:
         working-directory: website
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          run_install: false
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: website/package-lock.json
-      - run: npm install
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: website/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
       - name: test
-        run: npm test
+        run: pnpm test
