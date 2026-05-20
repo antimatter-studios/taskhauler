@@ -19,13 +19,12 @@ func init() {
 }
 
 // makeAuthRouter wires the real RequireAuth middleware followed by a stub
-// handler that records the gin context for assertions.
-func makeAuthRouter(m *Middleware, captured *gin.Context) *gin.Engine {
+// 200-handler. Tests that need to inspect ctx values do so via per-test
+// closures (see capturedUID / capturedAdmin / capturedEmail patterns below) —
+// the gin.Context can't be value-copied because it holds a sync.RWMutex.
+func makeAuthRouter(m *Middleware) *gin.Engine {
 	r := gin.New()
 	r.GET("/protected", m.RequireAuth(), func(c *gin.Context) {
-		if captured != nil {
-			*captured = *c
-		}
 		c.JSON(http.StatusOK, gin.H{"ok": true})
 	})
 	return r
@@ -59,7 +58,7 @@ func TestRequireAuth_MissingHeader_401(t *testing.T) {
 	db := newAuthTestDB(t)
 	issuer := NewIssuer(testSecret)
 	m := NewMiddleware(db, issuer)
-	r := makeAuthRouter(m, nil)
+	r := makeAuthRouter(m)
 
 	req := httptest.NewRequest(http.MethodGet, "/protected", nil)
 	w := httptest.NewRecorder()
@@ -72,7 +71,7 @@ func TestRequireAuth_MissingHeader_401(t *testing.T) {
 func TestRequireAuth_MalformedHeader_NoBearerPrefix_401(t *testing.T) {
 	db := newAuthTestDB(t)
 	m := NewMiddleware(db, NewIssuer(testSecret))
-	r := makeAuthRouter(m, nil)
+	r := makeAuthRouter(m)
 
 	req := httptest.NewRequest(http.MethodGet, "/protected", nil)
 	req.Header.Set("Authorization", "Token abc.def.ghi")
@@ -86,7 +85,7 @@ func TestRequireAuth_MalformedHeader_NoBearerPrefix_401(t *testing.T) {
 func TestRequireAuth_MalformedHeader_SingleWord_401(t *testing.T) {
 	db := newAuthTestDB(t)
 	m := NewMiddleware(db, NewIssuer(testSecret))
-	r := makeAuthRouter(m, nil)
+	r := makeAuthRouter(m)
 
 	req := httptest.NewRequest(http.MethodGet, "/protected", nil)
 	req.Header.Set("Authorization", "Bearer")
@@ -100,7 +99,7 @@ func TestRequireAuth_MalformedHeader_SingleWord_401(t *testing.T) {
 func TestRequireAuth_BearerWithEmptyToken_401(t *testing.T) {
 	db := newAuthTestDB(t)
 	m := NewMiddleware(db, NewIssuer(testSecret))
-	r := makeAuthRouter(m, nil)
+	r := makeAuthRouter(m)
 
 	req := httptest.NewRequest(http.MethodGet, "/protected", nil)
 	req.Header.Set("Authorization", "Bearer    ")
@@ -115,7 +114,7 @@ func TestRequireAuth_ExpiredJWT_401(t *testing.T) {
 	db := newAuthTestDB(t)
 	issuer := NewIssuer(testSecret)
 	m := NewMiddleware(db, issuer)
-	r := makeAuthRouter(m, nil)
+	r := makeAuthRouter(m)
 
 	now := time.Now()
 	claims := Claims{
@@ -144,7 +143,7 @@ func TestRequireAuth_InvalidSignatureJWT_401(t *testing.T) {
 	db := newAuthTestDB(t)
 	issuer := NewIssuer(testSecret)
 	m := NewMiddleware(db, issuer)
-	r := makeAuthRouter(m, nil)
+	r := makeAuthRouter(m)
 
 	// Sign with a different secret.
 	other := NewIssuer("totally-different-secret")
@@ -164,7 +163,7 @@ func TestRequireAuth_TamperedClaims_401(t *testing.T) {
 	db := newAuthTestDB(t)
 	issuer := NewIssuer(testSecret)
 	m := NewMiddleware(db, issuer)
-	r := makeAuthRouter(m, nil)
+	r := makeAuthRouter(m)
 
 	tok, err := issuer.IssueAccess(testUser())
 	require.NoError(t, err)
@@ -192,7 +191,7 @@ func TestRequireAuth_RefreshTokenRejected_401(t *testing.T) {
 	db := newAuthTestDB(t)
 	issuer := NewIssuer(testSecret)
 	m := NewMiddleware(db, issuer)
-	r := makeAuthRouter(m, nil)
+	r := makeAuthRouter(m)
 
 	refresh, err := issuer.IssueRefresh(testUser())
 	require.NoError(t, err)
@@ -242,7 +241,7 @@ func TestRequireAuth_BearerCaseInsensitive_200(t *testing.T) {
 	db := newAuthTestDB(t)
 	issuer := NewIssuer(testSecret)
 	m := NewMiddleware(db, issuer)
-	r := makeAuthRouter(m, nil)
+	r := makeAuthRouter(m)
 
 	tok, err := issuer.IssueAccess(testUser())
 	require.NoError(t, err)
@@ -294,7 +293,7 @@ func TestRequireAuth_ValidServiceToken_200_SetsContext(t *testing.T) {
 func TestRequireAuth_RevokedServiceToken_401(t *testing.T) {
 	db := newAuthTestDB(t)
 	m := NewMiddleware(db, NewIssuer(testSecret))
-	r := makeAuthRouter(m, nil)
+	r := makeAuthRouter(m)
 
 	sa := createUser(t, db, "revoked-bot@service.taskhauler.localhost", false, true)
 	plain, row := createServiceToken(t, db, sa.ID, "ci-bot")
@@ -316,7 +315,7 @@ func TestRequireAuth_RevokedServiceToken_401(t *testing.T) {
 func TestRequireAuth_UnknownServiceToken_401(t *testing.T) {
 	db := newAuthTestDB(t)
 	m := NewMiddleware(db, NewIssuer(testSecret))
-	r := makeAuthRouter(m, nil)
+	r := makeAuthRouter(m)
 
 	// Well-formed prefix but no DB row.
 	bogus, err := GenerateServiceToken()
@@ -334,7 +333,7 @@ func TestRequireAuth_UnknownServiceToken_401(t *testing.T) {
 func TestRequireAuth_ServiceTokenOrphanedUser_401(t *testing.T) {
 	db := newAuthTestDB(t)
 	m := NewMiddleware(db, NewIssuer(testSecret))
-	r := makeAuthRouter(m, nil)
+	r := makeAuthRouter(m)
 
 	sa := createUser(t, db, "ghost@service.taskhauler.localhost", false, true)
 	plain, _ := createServiceToken(t, db, sa.ID, "ghost-token")
@@ -379,7 +378,7 @@ func TestRequireAuth_JWTWithNonNumericSubject_401(t *testing.T) {
 	db := newAuthTestDB(t)
 	issuer := NewIssuer(testSecret)
 	m := NewMiddleware(db, issuer)
-	r := makeAuthRouter(m, nil)
+	r := makeAuthRouter(m)
 
 	now := time.Now()
 	claims := Claims{
