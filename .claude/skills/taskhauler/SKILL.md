@@ -20,52 +20,95 @@ Drive the Taskhauler REST API to create / read / update / delete the product's d
 - The user wants to *modify* the API itself (handler code, schema, etc.) — that's a code change task, not a skill invocation.
 - You're running tests — use `task` commands or `vitest`/`go test` directly.
 
-## Auth quickstart
+## Auth
 
-The API is at `http://taskhauler.localhost/api/v1` (or `https://taskhauler.antimatter-studios.com/api/v1` in prod). Every endpoint except `/health`, `/auth/login`, `/auth/refresh`, and `/openapi.json` requires a Bearer token.
+Taskhauler is installable software — do **not** assume a URL, email, or password. The user provides them by dropping a credentials file; the skill caches a token from there.
 
-### Login as a user
+State lives under `~/.config/taskhauler/`:
 
-```bash
-TOKEN="$(curl -sf -X POST \
-  -H 'Content-Type: application/json' \
-  -d '{"email":"chris@teamagentica.localhost","password":"<password>"}' \
-  http://taskhauler.localhost/api/v1/auth/login \
-  | jq -r .access_token)"
-```
+- `credentials.yaml` — **manual, ephemeral.** User (or trove) drops it in. Skill deletes it after first successful login. May only exist on disk for seconds.
+- `config.yaml` — **skill-generated, persistent. chmod 600.** Everything the skill needs at runtime: `url`, `email`, `access_token`, `refresh_token`, `expires_at`. Single source of truth.
+- `.gitignore` — **skill-generated, persistent.** Tripwire. If the user ever turns `~` or `~/.config` into a git repo (e.g. dotfiles), this prevents `credentials.yaml` and `config.yaml` from being tracked. Contents:
+  ```
+  credentials.yaml
+  config.yaml
+  ```
 
-Access tokens expire in 1h. Use `/auth/refresh` with a refresh token to get a new access token. The frontend's `apiClient` does this automatically; in scripts, just re-login if needed — it's fast.
+### Directory bootstrap (do this once, idempotently)
 
-### Use a service-account token
-
-Service-account tokens are long-lived bearer strings prefixed `tha_`. Pass them in the same `Authorization: Bearer` header. They route to a different validation path on the backend but the calling convention is identical.
-
-### Test the token
+Before any auth step:
 
 ```bash
-curl -s -H "Authorization: Bearer $TOKEN" http://taskhauler.localhost/api/v1/auth/me | jq
-# → {"id":3,"email":"chris@teamagentica.localhost","display_name":"Chris","is_admin":true,...}
+mkdir -p ~/.config/taskhauler
+chmod 700 ~/.config/taskhauler
+if [ ! -f ~/.config/taskhauler/.gitignore ]; then
+  cat > ~/.config/taskhauler/.gitignore <<'EOF'
+credentials.yaml
+config.yaml
+EOF
+fi
 ```
 
-## Request convention
+Do not skip this — it's the only defence against an accidental `git add ~/.config/`.
 
-Set these once at the top of any script:
+### Resolution order (run this before any API call)
+
+1. **Read config.yaml.** If missing, jump to step 4.
+2. **Use cached token.** If `expires_at - 60s > now`, use `access_token`. Done.
+3. **Refresh.** POST `${url}/api/v1/auth/refresh` with the `refresh_token`. On success: update `access_token`, `refresh_token`, `expires_at` in config.yaml and use the new `access_token`. On failure: fall through to step 4.
+4. **Login from credentials.** Read `~/.config/taskhauler/credentials.yaml`:
+   ```yaml
+   url: http://taskhauler.localhost
+   email: chris@teamagentica.com
+   password: hunter2
+   ```
+   POST `${url}/api/v1/auth/login` with `email` + `password`. On success:
+   - Write `~/.config/taskhauler/config.yaml` (chmod 600) with `url`, `email`, `access_token`, `refresh_token`, and `expires_at = now + access_token_ttl_seconds` (server tokens are 1h).
+   - `rm ~/.config/taskhauler/credentials.yaml` — the password should not linger. Do this even if it would have expired from trove on its own; the file's purpose is over.
+5. **No credentials.yaml** → stop and instruct the user:
+
+   > Create `~/.config/taskhauler/credentials.yaml` with `url`, `email`, `password` (see template above), then re-run. The file will be deleted automatically after login.
+
+### Trim whitespace from every YAML value
+
+Hand-edited YAML files often pick up trailing spaces, tabs, or surrounding newlines — especially on the password line. Strip leading/trailing whitespace from **every** value read from `credentials.yaml` or `config.yaml` before using it. A bad password with a trailing space fails login with a misleading 401.
 
 ```bash
-API="${API:-http://taskhauler.localhost/api/v1}"
-H=(-H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json")
+trim() { /usr/bin/sed -E 's/^[[:space:]]+|[[:space:]]+$//g'; }
+URL=$(yq -r .url   "$CFG" | trim)
+EMAIL=$(yq -r .email    "$CFG" | trim)
+PASS=$(yq -r .password  "$CFG" | trim)
 ```
 
-Then every call looks like:
+In Python: `value.strip()`. Apply this to URL, email, password, access_token, refresh_token, and any other scalar.
 
-```bash
-curl -sf -X GET    "${H[@]}" "$API/boards"
-curl -sf -X POST   "${H[@]}" -d '{"name":"Foo"}' "$API/boards"
-curl -sf -X PUT    "${H[@]}" -d '{"name":"Bar"}' "$API/boards/$ID"
-curl -sf -X DELETE "${H[@]}" "$API/boards/$ID"
+### config.yaml shape
+
+```yaml
+url: http://taskhauler.localhost
+email: chris@teamagentica.com
+access_token: eyJ...
+refresh_token: eyJ...
+expires_at: 1716223200   # unix seconds
 ```
 
-**Use Python or `--rawfile` for any body that spans multiple lines** — bash heredoc + jq inline can choke on control characters inside the body (newlines especially). See [Robust multi-line bodies](#robust-multi-line-bodies-for-descriptions--comments) below.
+### Service-account tokens (CI / headless)
+
+Long-lived `tha_…` bearer strings. Skip the credentials flow — write `config.yaml` directly:
+
+```yaml
+url: https://taskhauler.your-domain.com
+email: service-account@example
+access_token: tha_xxx
+refresh_token: null
+expires_at: 0
+```
+
+`expires_at: 0` tells the skill to never refresh. On 401 it falls to credentials.yaml; in pure-CI you keep that file absent so failure is loud.
+
+### Running it
+
+The preamble at [`templates/_preamble.sh`](templates/_preamble.sh) implements the full resolution order above using only `grep`, `sed`, `jq`, `curl` (no `yq` / `PyYAML` dependency). Every other template `source`s it and gets `$URL`, `$API`, `$TOKEN`, `${H[@]}` set. Prefer the templates over open-coding curl calls — see [Templates](#templates).
 
 ## Entity reference
 
@@ -183,111 +226,35 @@ The trailing segment is parsed loosely — `/TH/100` and `/TH/TH-100` both work 
 
 When the user asks to "open" or "share" a specific card, produce the URL using the board's `prefix` field + the card's `number` field.
 
-## Common patterns
+## Templates
 
-### Find a card by its ref (e.g. "TH-100")
+The `templates/` directory contains ready-to-run shell scripts for the most common operations. Each one `source`s `_preamble.sh` (auth + sets `$URL`, `$API`, `$TOKEN`, `${H[@]}`) and emits results as TSV (with a markdown table where useful).
 
-1. Parse the ref: split on `-` → prefix, number.
-2. List boards: `GET /boards`.
-3. Find the board with matching prefix (case-insensitive).
-4. `GET /boards/{boardId}/cards/number/{number}` → the card directly.
+**Prefer running a template over open-coding curl.** Templates handle prefix→board-id resolution, column-name→column-id resolution, the auth dance, and error cases. If a needed operation has no template yet, add one — they're cheap and consolidate the right idioms.
 
-```python
-import json, urllib.request
+| Template | Operation |
+|---|---|
+| [`_preamble.sh`](templates/_preamble.sh) | Sourced by all other templates. Handles auth, sets `$URL` / `$API` / `$TOKEN` / `${H[@]}`. |
+| [`boards-list.sh`](templates/boards-list.sh) | List boards with prefix, name, card count. |
+| [`boards-create.sh`](templates/boards-create.sh) | `<name> [prefix] [description]` — create a board (backend derives prefix if omitted). |
+| [`columns-list.sh`](templates/columns-list.sh) | `<board>` — list columns (position, name, id). |
+| [`epics-list.sh`](templates/epics-list.sh) | `<board>` — list epics (position, name, color, id). |
+| [`cards-list.sh`](templates/cards-list.sh) | `<board>` — list cards (number, title, status, priority, assignee). |
+| [`cards-search.sh`](templates/cards-search.sh) | `<board> <query>` — server-side LIKE on title/description/labels. |
+| [`cards-get-by-ref.sh`](templates/cards-get-by-ref.sh) | `TH-100` → full card JSON. |
+| [`cards-create.sh`](templates/cards-create.sh) | `<board> <column-name> <title> [description]` → created card. |
+| [`cards-move.sh`](templates/cards-move.sh) | `<card-ref> <target-column-name>` → updated card. |
+| [`comments-add.sh`](templates/comments-add.sh) | `<card-ref>` + body on stdin → multi-line safe + read-back verified. |
+| [`url-build.sh`](templates/url-build.sh) | `TH-100` → shareable card URL. |
+| [`service-accounts-list.sh`](templates/service-accounts-list.sh) | List service accounts (admin only). |
 
-def find_card(ref, api, token):
-    prefix, num = ref.split("-", 1); num = int(num)
-    h = {"Authorization": f"Bearer {token}"}
-    boards = json.load(urllib.request.urlopen(urllib.request.Request(f"{api}/boards", headers=h)))
-    board = next((b for b in boards if (b["prefix"] or "").upper() == prefix.upper()), None)
-    if not board: return None
-    return json.load(urllib.request.urlopen(urllib.request.Request(f"{api}/boards/{board['id']}/cards/number/{num}", headers=h)))
-```
+**Board references** in any template that takes `<board>` accept either a prefix (`TH`) or a UUID. **Column names** are matched case-insensitively. **Card refs** (`TH-100`) work everywhere; the template parses prefix + number.
 
-### Move a card between columns
+### When the user requests something without a template
 
-```bash
-# 1. Get the column id (cache this if you'll move many cards)
-COL_DONE=$(curl -sf "${H[@]}" "$API/boards/$BOARD/columns" | jq -r '.[] | select(.name == "Done") | .id')
-
-# 2. PUT the card
-curl -sf -X PUT "${H[@]}" -d "{\"column_id\": \"$COL_DONE\"}" "$API/boards/$BOARD/cards/$CARD"
-```
-
-### Add a comment with read-back verification
-
-This is the recommended pattern when the comment content matters (e.g. recording validation findings on a card). It writes the comment, reads it back, and asserts byte-equal so you know the body landed exactly as sent.
-
-```python
-import json, urllib.request, os
-
-api    = os.environ["API"]
-token  = os.environ["TOKEN"]
-card_id = "..."
-body    = """Multi-line comment body
-with special chars (`backticks`, $dollar signs, etc.)"""
-
-H = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
-
-# POST
-data = json.dumps({"body": body}).encode("utf-8")
-req  = urllib.request.Request(f"{api}/cards/{card_id}/comments", data=data, headers=H, method="POST")
-posted = json.load(urllib.request.urlopen(req))
-pid = posted["id"]
-
-# Read back
-comments = json.load(urllib.request.urlopen(urllib.request.Request(f"{api}/cards/{card_id}/comments", headers=H)))
-actual = next((c["body"] for c in comments if c["id"] == pid), None)
-assert actual == body, f"comment body mismatch on {pid}"
-print(f"✓ comment {pid[:8]} on {card_id[:8]}")
-```
-
-**Always use Python (or `jq --rawfile`) for multi-line bodies.** Bash heredoc + inline `jq -n --arg b "$BODY"` will choke on the raw newlines in the body before the JSON is even constructed.
-
-### Bulk-create cards
-
-```python
-import json, urllib.request, os
-api = os.environ["API"]; token = os.environ["TOKEN"]; board_id = os.environ["BOARD"]; col_id = os.environ["COL"]
-H = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
-
-cards_to_create = [
-    {"title": "Card 1", "description": "...", "priority": "high"},
-    {"title": "Card 2", "description": "...", "priority": "low"},
-    # ...
-]
-created = []
-for c in cards_to_create:
-    body = {**c, "column_id": col_id, "card_type": "task"}
-    req = urllib.request.Request(f"{api}/boards/{board_id}/cards", data=json.dumps(body).encode(), headers=H, method="POST")
-    created.append(json.load(urllib.request.urlopen(req)))
-
-print(f"created {len(created)} cards")
-```
-
-### Move card to In Progress / Done with comment
-
-```python
-def transition(card_id, target_column_id, why):
-    # Move
-    req = urllib.request.Request(f"{api}/boards/{board}/cards/{card_id}",
-        data=json.dumps({"column_id": target_column_id}).encode(),
-        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"}, method="PUT")
-    urllib.request.urlopen(req)
-    # Comment
-    req = urllib.request.Request(f"{api}/cards/{card_id}/comments",
-        data=json.dumps({"body": why}).encode(),
-        headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"}, method="POST")
-    urllib.request.urlopen(req)
-```
-
-### Search cards across a board
-
-```bash
-curl -sf "${H[@]}" "$API/boards/$BOARD/cards/search?q=oauth" | jq '.[] | {number, title, priority}'
-```
-
-Server-side LIKE on title + description + labels. Case-insensitive when running against Postgres (the production stack); case-sensitive when running against SQLite (the dev/test stack — note for test isolation).
+1. Check the [Entity reference](#entity-reference) section for the endpoint + shape.
+2. Write a one-off using the same idiom as the closest existing template (source `_preamble.sh`, use `${H[@]}`).
+3. If the operation will recur, save it as a new template under `templates/` and add a row above.
 
 ## Mock-card-N bridge (frontend-specific)
 
@@ -295,36 +262,11 @@ The frontend's `src/mock/` files reference cards by placeholder strings like `mo
 
 When the corresponding real API endpoints exist (TH-76 activity feed, TH-80 suggestions, etc.), this bridge gets removed and consumers read real `card_id`s.
 
-## Robust multi-line bodies for descriptions / comments
+## Multi-line bodies (descriptions, comments)
 
-When the body contains newlines, special chars, or shell metacharacters, prefer this Python idiom over bash heredoc + jq:
+[`comments-add.sh`](templates/comments-add.sh) is the canonical pattern: body comes in on stdin, gets JSON-encoded via `jq -n --arg`, and is read back to verify byte-equal landing.
 
-```python
-import json, urllib.request
-
-body = """Line 1
-Line 2 with `backticks` and $dollars and "quotes" and 'apostrophes'"""
-
-req = urllib.request.Request(
-    f"{api}/cards/{cid}/comments",
-    data=json.dumps({"body": body}).encode("utf-8"),
-    headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
-    method="POST",
-)
-urllib.request.urlopen(req)
-```
-
-If you must use bash, write the body to a file first and `jq --rawfile`:
-
-```bash
-cat > /tmp/body.txt <<'EOF'
-Multi-line body with `backticks` and $vars preserved
-because the heredoc is quoted ('EOF' not EOF).
-EOF
-curl -sf -X POST "${H[@]}" \
-  -d "$(jq -n --rawfile b /tmp/body.txt '{body: $b}')" \
-  "$API/cards/$cid/comments"
-```
+If you're writing ad-hoc bash without the template: never construct JSON by string-concat for multi-line bodies. Either pipe the body through `jq -n --arg b "$BODY" '{body:$b}'` (works for moderate sizes) or write to a file and use `jq -n --rawfile b /tmp/body.txt '{body:$b}'` for arbitrary content.
 
 ## Error handling
 
@@ -346,7 +288,7 @@ The most common errors:
 
 ## Don't
 
-- **Don't write the token to disk or commit it.** Re-login is fast; tokens are short-lived for a reason.
+- **Don't commit any of `~/.config/taskhauler/*` to a repo.** The token file is allowed on disk (chmod 600) but is per-machine and per-user. `credentials.yaml` is doubly off-limits — it carries the password — and the skill deletes it after login anyway.
 - **Don't `INSERT` into the database directly.** Use the API so events (TH-17) fire and triggers run. If you absolutely must (e.g. migration), use `task psql` and document why in a comment.
 - **Don't bypass the prefix derivation when bulk-creating boards** — let the backend pick. Only override with `prefix` when you specifically need a non-default value, and remember the unique-after-trim-uppercase rule.
 - **Don't construct JSON by string concatenation in bash.** Use `jq -n --arg` (single-line) or Python (multi-line) — escaping bugs are silent and hard to debug.
